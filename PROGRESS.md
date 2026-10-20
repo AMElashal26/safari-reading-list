@@ -50,6 +50,6 @@ changes.
 ### 2026-10-20
 - **Did:** Mapped Safari's Reading List storage (`com.apple.ReadingList` folder in the 264 MB binary `Bookmarks.plist`). Profiled 13,625 items: 99% never opened, 999 domains, 245 duplicate URLs. Built `readinglist.py` (load, dedupe, export to CSV + offline `browse.html`) and `--prune` (dry run → backup → working copy → Foundation batch delete → checks → write).
 - **Did:** Pruned 8,749 items: 13,625 → 4,876. The first attempt used PlistBuddy, which crashed; the checks kept Safari untouched. The second attempt used JXA/Foundation and succeeded. Compared old and new files: root metadata, other folders and kept items are identical and in the same order.
-- **Did:** Moved the rules into a git-ignored `rules.json`, renamed things generically, added README, CASE_STUDY, PROGRESS and CLAUDE.md, and created the private GitHub repo.
+- **Did:** Moved the rules into a git-ignored `rules.json`, renamed things generically, added README, CASE_STUDY, PROGRESS and CLAUDE.md, and created the private GitHub repo `AMElashal26/safari-reading-list` (initial commit `ac8660e`). Before committing, a scan of the staged files caught a leftover collection name in `browse_template.html`; it was fixed.
 - **Decided:** see the decision-log rows dated 2026-10-20.
 - **Next:** Check Safari for removed items reappearing (iCloud); review the remaining variety; write the learning routing rules.
