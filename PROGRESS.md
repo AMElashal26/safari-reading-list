@@ -28,6 +28,7 @@ changes.
 | 2026-10-20 | Delete through Foundation (`NSPropertyListSerialization` via JXA), not PlistBuddy | PlistBuddy SIGABRT'd on the 264 MB file and left a corrupt working copy; Foundation is Safari's own serializer and is lossless |
 | 2026-10-20 | Personal rules in git-ignored `rules.json`; neutral `rules.example.json` committed; names made generic (`--prune`, `is_excluded`) | Repo is meant to show technical work; personal content stays out of code and git history |
 | 2026-10-20 | Deferred: `learning` routing rules in `categorize()` | Owner wants to review what remains after pruning first |
+| 2026-10-20 | Code explanations live in a separate interactive page (`docs/code-walkthrough.html`), not as inline comments | Owner asked for tutor-style walkthroughs (10 levels). A separate page keeps the portfolio code clean and supports zooming, diagrams and quizzes that comments can't |
 
 ## Doc map
 | Doc | What it holds |
@@ -36,6 +37,7 @@ changes.
 | `CASE_STUDY.md` | Portfolio writeup: problem, approach, challenges, stack, results |
 | `PROGRESS.md` | This file |
 | `CLAUDE.md` | Instructions for future Claude Code sessions |
+| `docs/code-walkthrough.html` | Interactive line → application walkthrough of `readinglist.py` (published privately at https://claude.ai/artifact/2bNZMn2jY2FwSnt8qExbTS). Line notes are keyed to line numbers, so update them when the script changes |
 | `rules.json` *(git-ignored)* | Personal exclude/learning routing rules |
 | `~/ReadingListExport/` *(off-repo)* | CSVs, `browse.html`, `backups/` |
 
@@ -51,5 +53,6 @@ changes.
 - **Did:** Mapped Safari's Reading List storage (`com.apple.ReadingList` folder in the 264 MB binary `Bookmarks.plist`). Profiled 13,625 items: 99% never opened, 999 domains, 245 duplicate URLs. Built `readinglist.py` (load, dedupe, export to CSV + offline `browse.html`) and `--prune` (dry run → backup → working copy → Foundation batch delete → checks → write).
 - **Did:** Pruned 8,749 items: 13,625 → 4,876. The first attempt used PlistBuddy, which crashed; the checks kept Safari untouched. The second attempt used JXA/Foundation and succeeded. Compared old and new files: root metadata, other folders and kept items are identical and in the same order.
 - **Did:** Moved the rules into a git-ignored `rules.json`, renamed things generically, added README, CASE_STUDY, PROGRESS and CLAUDE.md, and created the private GitHub repo `AMElashal26/safari-reading-list` (initial commit `ac8660e`). Before committing, a scan of the staged files caught a leftover collection name in `browse_template.html`; it was fixed.
+- **Did:** Built `docs/code-walkthrough.html`: an interactive code atlas with notes on about 190 lines, a block → function → layer → module → application zoom ladder, and chapters for the execution trace, data flow, design patterns, mental model, call trees, knowledge and how to read code. Published as a private artifact.
 - **Decided:** see the decision-log rows dated 2026-10-20.
 - **Next:** Check Safari for removed items reappearing (iCloud); review the remaining variety; write the learning routing rules.

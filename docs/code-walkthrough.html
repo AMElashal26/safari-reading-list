@@ -1,0 +1,1092 @@
+<title>readinglist.py Code Atlas</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=Source+Sans+3:ital,wght@0,400;0,600;1,400&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>
+/* Layout: sticky header + two-pane explorer (source | zoom ladder), then long-form chapters for Levels 3–10. */
+:root {
+  --bg: #f3f5f7; --surface: #ffffff; --ink: #151a21; --muted: #5b6573; --line: #dce1e7;
+  --accent: #0e6f68; --accent-soft: #dff1ef; --hl: #fff3c4; --range: #e9eef5;
+  --code-bg: #fbfcfd; --kw: #8a3ffc; --str: #a3420f; --com: #6b7682; --num: #0b6bcb; --fn: #0e6f68;
+  --l1: #7a8696; --l2: #b7791f; --l3: #2f6fdb; --l4: #8a3ffc; --l5: #c2410c; --l6: #be123c; --l7: #15803d; --l8: #0e7490;
+  --display: "Bricolage Grotesque", "Avenir Next", "Segoe UI", sans-serif;
+  --body: "Source Sans 3", -apple-system, "Segoe UI", sans-serif;
+  --mono: "JetBrains Mono", ui-monospace, "SF Mono", Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0e1216; --surface: #151b21; --ink: #e5e9ee; --muted: #95a1ae; --line: #27303a;
+    --accent: #4fc9bd; --accent-soft: #143430; --hl: #3a3416; --range: #1c2631;
+    --code-bg: #11161b; --kw: #c3a3ff; --str: #f4a36c; --com: #7f8b98; --num: #7cb8ff; --fn: #4fc9bd;
+    --l1: #8e99a8; --l2: #e0a64a; --l3: #6ea2ff; --l4: #b58cff; --l5: #f08a4b; --l6: #fb7185; --l7: #4ade80; --l8: #38bdf8;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0e1216; --surface: #151b21; --ink: #e5e9ee; --muted: #95a1ae; --line: #27303a;
+  --accent: #4fc9bd; --accent-soft: #143430; --hl: #3a3416; --range: #1c2631;
+  --code-bg: #11161b; --kw: #c3a3ff; --str: #f4a36c; --com: #7f8b98; --num: #7cb8ff; --fn: #4fc9bd;
+  --l1: #8e99a8; --l2: #e0a64a; --l3: #6ea2ff; --l4: #b58cff; --l5: #f08a4b; --l6: #fb7185; --l7: #4ade80; --l8: #38bdf8;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body { background: var(--bg); color: var(--ink); font: 16px/1.55 var(--body); }
+body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-area-inset-top, 0px); z-index: 10; background: var(--surface); }
+.wrap { padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); max-width: 1320px; margin: 0 auto; }
+header.top { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 5; background: var(--surface); border-bottom: 1px solid var(--line); }
+header.top .wrap { display: flex; flex-wrap: wrap; gap: 8px 20px; align-items: baseline; padding-block: 12px; }
+header.top h1 { font: 700 20px/1.2 var(--display); margin: 0; letter-spacing: -0.01em; }
+header.top h1 code { font-family: var(--mono); font-size: 0.85em; color: var(--accent); }
+header.top nav { display: flex; flex-wrap: wrap; gap: 4px 14px; font-size: 14px; }
+header.top nav a { color: var(--muted); text-decoration: none; }
+header.top nav a:hover, header.top nav a:focus-visible { color: var(--accent); }
+a { color: var(--accent); }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+.intro { padding-block: 28px 8px; display: grid; gap: 12px; max-width: 72ch; }
+.intro h2 { font: 700 clamp(26px, 4vw, 38px)/1.1 var(--display); margin: 0; text-wrap: balance; letter-spacing: -0.02em; }
+.intro p { margin: 0; color: var(--muted); }
+.questions { display: flex; flex-wrap: wrap; gap: 8px; margin: 4px 0 0; padding: 0; list-style: none; }
+.questions li { font-size: 14px; background: var(--accent-soft); color: var(--ink); border-radius: 999px; padding: 3px 12px; }
+.questions b { color: var(--accent); }
+
+.legend { display: flex; flex-wrap: wrap; gap: 6px; padding-block: 16px 10px; }
+.legend button { font: 600 13px var(--body); display: inline-flex; gap: 6px; align-items: center; border: 1px solid var(--line); background: var(--surface); color: var(--ink); border-radius: 6px; padding: 4px 10px; cursor: pointer; }
+.legend button i { width: 10px; height: 10px; border-radius: 2px; display: inline-block; }
+.legend button:hover { border-color: var(--accent); }
+
+.explorer { display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr); gap: 20px; align-items: start; padding-bottom: 40px; }
+@media (max-width: 900px) { .explorer { grid-template-columns: minmax(0, 1fr); } }
+.code { background: var(--code-bg); border: 1px solid var(--line); border-radius: 8px; overflow: hidden; }
+.code-head { display: flex; justify-content: space-between; gap: 10px; flex-wrap: wrap; font: 13px var(--mono); color: var(--muted); padding: 8px 12px; border-bottom: 1px solid var(--line); }
+.code-scroll { overflow: auto; max-height: calc(100vh - 210px); }
+@media (max-width: 900px) { .code-scroll { max-height: 60vh; } }
+.src { font: 12.5px/1.65 var(--mono); min-width: max-content; padding-block: 6px; }
+.row { display: grid; grid-template-columns: 4px 44px 1fr; cursor: pointer; }
+.row .stripe { background: var(--lc); opacity: 0.85; }
+.row .num { text-align: right; padding-right: 12px; color: var(--muted); user-select: none; font-variant-numeric: tabular-nums; }
+.row .txt { white-space: pre; padding-right: 20px; }
+.row:hover { background: var(--range); }
+.row.inrange { background: var(--range); }
+.row.inblock { background: var(--accent-soft); }
+.row.active { background: var(--hl); }
+.row.active .num { color: var(--ink); font-weight: 600; }
+.row.annotated .num::after { content: "•"; color: var(--accent); margin-left: 3px; }
+.kw { color: var(--kw); } .str { color: var(--str); } .com { color: var(--com); font-style: italic; } .nm { color: var(--num); } .fnname { color: var(--fn); font-weight: 600; }
+
+.panel { position: sticky; top: calc(env(safe-area-inset-top, 0px) + 64px); display: grid; gap: 12px; max-height: calc(100vh - 84px); overflow: auto; padding-bottom: 8px; }
+@media (max-width: 900px) { .panel { position: static; max-height: none; } }
+.card { background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: 14px 16px; }
+.eyebrow { font: 600 11px var(--body); text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); margin: 0 0 6px; }
+.linecard h3 { font: 700 18px/1.3 var(--display); margin: 0 0 8px; }
+.linecard pre { font: 12.5px/1.5 var(--mono); background: var(--code-bg); border: 1px solid var(--line); border-radius: 6px; padding: 8px 10px; margin: 0 0 10px; overflow-x: auto; white-space: pre; }
+dl.fields { display: grid; grid-template-columns: 9.5em minmax(0, 1fr); gap: 6px 12px; margin: 0; font-size: 15px; }
+@media (max-width: 480px) { dl.fields { grid-template-columns: minmax(0, 1fr); } dl.fields dt { margin-top: 6px; } }
+dl.fields dt { font-weight: 600; color: var(--muted); font-size: 13px; padding-top: 2px; }
+dl.fields dd { margin: 0; }
+code { font-family: var(--mono); font-size: 0.88em; }
+.nav-hint { font-size: 13px; color: var(--muted); display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+.nav-hint button { font: 600 13px var(--body); border: 1px solid var(--line); background: var(--surface); color: var(--ink); border-radius: 6px; padding: 3px 10px; cursor: pointer; }
+kbd { font: 12px var(--mono); border: 1px solid var(--line); border-bottom-width: 2px; border-radius: 4px; padding: 0 5px; background: var(--code-bg); }
+
+.ladder { list-style: none; margin: 0; padding: 0; display: grid; gap: 0; }
+.ladder li { position: relative; padding: 10px 12px 10px 30px; border-radius: 6px; cursor: default; }
+.ladder li::before { content: ""; position: absolute; left: 11px; top: 16px; width: 9px; height: 9px; border-radius: 50%; background: var(--surface); border: 2px solid var(--lvl, var(--accent)); }
+.ladder li:not(:last-child)::after { content: ""; position: absolute; left: 15px; top: 27px; bottom: -12px; width: 2px; background: var(--line); }
+.ladder li:hover { background: var(--range); }
+.ladder .lvl { font: 600 11px var(--body); text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); }
+.ladder .name { font: 700 15px/1.3 var(--display); margin: 1px 0 4px; }
+.ladder .name small { font: 400 12px var(--mono); color: var(--muted); margin-left: 6px; }
+.ladder .q { display: grid; grid-template-columns: 4.2em minmax(0, 1fr); gap: 2px 8px; font-size: 14px; }
+.ladder .q b { color: var(--muted); font-weight: 600; font-size: 12px; padding-top: 2px; }
+
+main.chapters { padding-block: 8px 60px; }
+section.ch { padding-block: 34px; border-top: 1px solid var(--line); }
+section.ch > .head { display: grid; gap: 4px; margin-bottom: 18px; max-width: 72ch; }
+section.ch h2 { font: 700 clamp(22px, 3vw, 28px)/1.15 var(--display); margin: 0; text-wrap: balance; letter-spacing: -0.01em; }
+section.ch .head p { margin: 0; color: var(--muted); }
+.prose { max-width: 72ch; }
+.prose p { margin: 0 0 12px; }
+.grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 300px), 1fr)); gap: 12px; }
+.layer { border-left: 4px solid var(--lc); }
+.layer h3, .pattern h3 { font: 700 16px/1.3 var(--display); margin: 0 0 6px; }
+.layer h3 small { font: 400 12px var(--mono); color: var(--muted); margin-left: 6px; }
+.layer dl.fields { grid-template-columns: 6.5em minmax(0, 1fr); font-size: 14px; }
+.scroll-x { overflow-x: auto; }
+table { border-collapse: collapse; width: 100%; font-size: 14.5px; }
+th, td { text-align: left; vertical-align: top; padding: 9px 12px; border-bottom: 1px solid var(--line); }
+th { font: 600 12px var(--body); text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); background: var(--surface); }
+td code { white-space: nowrap; }
+ol.trace { list-style: none; margin: 0; padding: 0; display: grid; gap: 0; max-width: 80ch; counter-reset: s; }
+ol.trace li { counter-increment: s; display: grid; grid-template-columns: 34px minmax(0, 1fr); gap: 12px; padding: 10px 0; position: relative; }
+ol.trace li::before { content: counter(s); font: 600 13px var(--mono); color: var(--accent); background: var(--accent-soft); border-radius: 50%; width: 28px; height: 28px; display: grid; place-items: center; }
+ol.trace li:not(:last-child)::after { content: ""; position: absolute; left: 13px; top: 42px; bottom: -6px; width: 2px; background: var(--line); }
+ol.trace b { font-family: var(--display); }
+ol.trace .ref { font: 12px var(--mono); color: var(--muted); }
+.cols { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 420px), 1fr)); gap: 24px; }
+.cols h3 { font: 700 16px var(--display); margin: 0 0 10px; }
+pre.tree { font: 13px/1.55 var(--mono); background: var(--code-bg); border: 1px solid var(--line); border-radius: 8px; padding: 14px 16px; overflow-x: auto; margin: 0; }
+pre.mermaid { background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: 12px; overflow-x: auto; }
+.pattern .tag { font: 600 11px var(--body); text-transform: uppercase; letter-spacing: 0.08em; color: var(--accent); }
+.pattern dl.fields { grid-template-columns: 6.5em minmax(0, 1fr); font-size: 14px; }
+.metaphor { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 260px), 1fr)); gap: 12px; }
+.metaphor .card b { font-family: var(--display); display: block; margin-bottom: 2px; }
+.metaphor .card span { font: 12px var(--mono); color: var(--muted); }
+ul.tight { margin: 0; padding-left: 1.1em; display: grid; gap: 4px; }
+details.q { background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: 10px 14px; }
+details.q + details.q { margin-top: 8px; }
+details.q summary { cursor: pointer; font-weight: 600; }
+details.q div { margin-top: 8px; color: var(--ink); }
+.zoomline { font: 13px/1.6 var(--mono); display: flex; flex-wrap: wrap; gap: 6px; align-items: center; color: var(--muted); }
+.zoomline span { background: var(--surface); border: 1px solid var(--line); border-radius: 4px; padding: 1px 8px; color: var(--ink); }
+@media (prefers-reduced-motion: no-preference) { .row, .ladder li { transition: background-color .12s; } }
+</style>
+
+<header class="top">
+  <div class="wrap">
+    <h1><code>readinglist.py</code> Code Atlas</h1>
+    <nav aria-label="Chapters">
+      <a href="#explorer">Explorer</a><a href="#layers">Layers</a><a href="#trace">Execution</a><a href="#dataflow">Data flow</a><a href="#intent">Design</a><a href="#metaphor">Mental model</a><a href="#structure">Structure</a><a href="#knowledge">Knowledge</a><a href="#reading">Reading code</a>
+    </nav>
+  </div>
+</header>
+
+<div class="wrap">
+  <section class="intro" id="explorer">
+    <h2>From one line to the whole application</h2>
+    <p>Click any line of the Safari Reading List tool. The panel explains that line in detail, then zooms out step by step: line, block, function, layer, module, application. Hover a step to light up the code it covers. Lines with a dot have their own notes; the others show the block they belong to.</p>
+    <ul class="questions" aria-label="The three questions asked at every level">
+      <li><b>What</b> does this do?</li><li><b>Why</b> does it exist?</li><li>What larger structure does it <b>build</b>?</li>
+    </ul>
+  </section>
+  <div class="legend" id="legend" aria-label="Architectural layers — click to jump"></div>
+  <div class="explorer">
+    <div class="code">
+      <div class="code-head"><span>readinglist.py · 260 lines</span><span>Python 3 · stdlib only</span></div>
+      <div class="code-scroll" id="codeScroll" tabindex="0" aria-label="Source code. Use up and down arrow keys to move between lines.">
+        <div class="src" id="src"></div>
+      </div>
+    </div>
+    <aside class="panel" id="panel" aria-live="polite"></aside>
+  </div>
+</div>
+
+<main class="chapters wrap">
+
+<section class="ch" id="layers">
+  <div class="head"><p class="eyebrow">Level 3 · Functional layers</p><h2>Eight layers, each leaning on the one above</h2>
+  <p>The file reads top to bottom in dependency order: each layer only calls layers defined above it, except the entry point, which calls everything. The colours match the stripes in the explorer.</p></div>
+  <div class="grid" id="layerCards"></div>
+</section>
+
+<section class="ch" id="trace">
+  <div class="head"><p class="eyebrow">Level 4 · Execution trace</p><h2>What happens when you press Return</h2>
+  <p>One command, two possible paths. <code>main()</code> reads the flags and sends the run down the export path or the prune path.</p></div>
+  <pre class="mermaid">
+flowchart TD
+  A["python3 readinglist.py ..."] --> B["Module loads: imports, constants"]
+  B --> C["RULES = load_rules() reads rules.json"]
+  C --> D{"__name__ == '__main__'?"}
+  D -- "no: imported as a library" --> Z["Stop. Functions are available to the importer"]
+  D -- yes --> E["main() parses flags"]
+  E --> F{"--prune?"}
+  F -- no --> G["load_items(): plutil to XML, parse, flatten"]
+  G --> H["dedupe()"]
+  H --> I["categorize() each item"]
+  I --> J["write_csvs() + write_html()"]
+  J --> K["Print summary"]
+  F -- yes --> P["load_items() + is_excluded() find targets"]
+  P --> Q{"--apply?"}
+  Q -- no --> R["Print dry-run report, exit"]
+  Q -- yes --> S{"Safari running?"}
+  S -- yes --> X["Refuse and exit"]
+  S -- no --> T["Back up + make working copy"]
+  T --> U["osascript runs DELETE_JXA on the copy"]
+  U --> V{"Checks pass and file unchanged?"}
+  V -- no --> Y["Abort. Safari untouched"]
+  V -- yes --> W["Copy result over Bookmarks.plist"]
+  </pre>
+  <div class="cols" style="margin-top:24px">
+    <div><h3>Export path, step by step</h3><ol class="trace" id="traceExport"></ol></div>
+    <div><h3>Prune path, step by step</h3><ol class="trace" id="tracePrune"></ol></div>
+  </div>
+</section>
+
+<section class="ch" id="dataflow">
+  <div class="head"><p class="eyebrow">Level 5 · Data flow</p><h2>How one saved link changes shape</h2>
+  <p>Follow a single Reading List entry from bytes on disk to a row in your browser. Each step changes the data's shape for a reason.</p></div>
+  <div class="scroll-x"><table id="flowTable"><thead><tr><th>#</th><th>Stage</th><th>Shape of the data</th><th>What changed</th><th>Why</th></tr></thead><tbody></tbody></table></div>
+  <h3 style="font:700 16px var(--display);margin:28px 0 10px">The prune path's data flow</h3>
+  <div class="scroll-x"><table id="flowPrune"><thead><tr><th>#</th><th>Stage</th><th>Shape</th><th>Why</th></tr></thead><tbody></tbody></table></div>
+</section>
+
+<section class="ch" id="intent">
+  <div class="head"><p class="eyebrow">Level 6 · Architectural intent</p><h2>Why it's built this way</h2>
+  <p>Each pattern below is a choice. For each one: the pattern, where it appears, the alternatives, and what it costs.</p></div>
+  <div class="grid" id="patterns"></div>
+</section>
+
+<section class="ch" id="metaphor">
+  <div class="head"><p class="eyebrow">Level 7 · Mental model</p><h2>The conservation lab</h2>
+  <p>Think of the program as a lab that looks after one irreplaceable archive: Safari's Bookmarks.plist.</p></div>
+  <div class="metaphor" id="metaphorCards"></div>
+  <div class="prose" style="margin-top:18px"><p>The core rule of the lab is that <b>nobody works on the original</b>. Everything happens on a copy, the copy is checked against the request, and the original is only replaced while the building is closed (Safari quit) and nobody else has touched it since the copy was made.</p></div>
+</section>
+
+<section class="ch" id="structure">
+  <div class="head"><p class="eyebrow">Level 8 · Visual structure</p><h2>Who calls whom</h2>
+  <p>On the left, the call tree from the entry point. On the right, the parts of the whole system and where they live.</p></div>
+  <div class="cols">
+<pre class="tree">main()
+ ├─ argparse                      reads the flags
+ ├─ prune(apply, out)             when --prune
+ │   ├─ load_items()
+ │   │   ├─ load_root()  ── plutil (macOS)
+ │   │   └─ reading_list_index()
+ │   ├─ is_excluded() ── matches_domain()
+ │   ├─ safari_running() ── pgrep (macOS)
+ │   ├─ load_root(work) ── reading_list_index()
+ │   ├─ osascript ── DELETE_JXA ── Foundation
+ │   └─ load_items(work)          checks the result
+ ├─ load_items()                  export path
+ ├─ dedupe()
+ ├─ categorize()
+ │   └─ is_excluded() ── matches_domain()
+ ├─ write_csvs() ── fmt()
+ └─ write_html() ── fmt()
+                 └─ browse_template.html</pre>
+<pre class="tree">Reading List toolkit
+ ├─ Inputs
+ │   ├─ ~/Library/Safari/Bookmarks.plist   Safari's data
+ │   └─ rules.json                         your routing rules
+ ├─ Engine: readinglist.py
+ │   ├─ Loading layer      parse + flatten
+ │   ├─ Rules layer        categorize
+ │   ├─ Native bridge      JXA / Foundation
+ │   ├─ Safety layer       prune
+ │   └─ Exporters          CSV + HTML
+ ├─ View: browse_template.html             offline UI
+ └─ Outputs: ~/ReadingListExport/
+     ├─ learning.csv · other.csv · excluded.csv
+     ├─ browse.html
+     └─ backups/Bookmarks-&lt;stamp&gt;.plist</pre>
+  </div>
+</section>
+
+<section class="ch" id="knowledge">
+  <div class="head"><p class="eyebrow">Level 9 · Knowledge extraction</p><h2>What this file teaches</h2></div>
+  <div class="grid" id="knowledgeCards"></div>
+</section>
+
+<section class="ch" id="reading">
+  <div class="head"><p class="eyebrow">Level 10 · Learning mode</p><h2>How to read a file you've never seen</h2>
+  <p>A repeatable method, shown on this file. Use it on any codebase.</p></div>
+  <div class="zoomline" aria-label="Zoom levels"><span>Line</span>→<span>Block</span>→<span>Function</span>→<span>Module</span>→<span>Subsystem</span>→<span>Application</span></div>
+  <ol class="trace" id="method" style="margin-top:18px"></ol>
+  <h3 style="font:700 16px var(--display);margin:28px 0 10px">Pure or side-effecting? Sort every function</h3>
+  <div class="prose"><p>A useful first pass on any file: mark which functions only compute (pure: same input, same output, touches nothing) and which reach out to the world (files, processes, the clock). Pure functions are easy to test and safe to call. Side effects are where bugs and danger live, so read those most carefully.</p></div>
+  <div class="scroll-x"><table id="purity"><thead><tr><th>Function</th><th>Kind</th><th>Touches</th></tr></thead><tbody></tbody></table></div>
+  <h3 style="font:700 16px var(--display);margin:28px 0 10px">Check yourself</h3>
+  <div id="quiz"></div>
+</section>
+</main>
+
+<script type="text/plain" id="source">
+#!/usr/bin/env python3
+"""Export, categorize and prune Safari's Reading List.
+
+Exports are written to a local-only folder (not iCloud). Safari's
+Bookmarks.plist is only modified by `--prune --apply`, after a backup.
+
+    python3 readinglist.py                 # export to ~/ReadingListExport
+    python3 readinglist.py --out DIR       # export somewhere else
+    python3 readinglist.py --prune         # dry run: what would be removed
+    python3 readinglist.py --prune --apply # back up, then edit Safari (quit it first)
+
+Routing rules live in rules.json (git-ignored); see rules.example.json.
+"""
+import argparse
+import csv
+import json
+import plistlib
+import shutil
+import subprocess
+import tempfile
+from collections import Counter
+from datetime import datetime
+from pathlib import Path
+from urllib.parse import urlparse
+
+HERE = Path(__file__).parent
+BOOKMARKS = Path.home() / "Library/Safari/Bookmarks.plist"
+DEFAULT_OUT = Path.home() / "ReadingListExport"
+COLLECTIONS = ("learning", "other", "excluded")
+
+
+def load_rules():
+    """Read rules.json, falling back to the committed example."""
+    path = HERE / "rules.json"
+    if not path.exists():
+        path = HERE / "rules.example.json"
+    rules = json.loads(path.read_text(encoding="utf-8"))
+    return {
+        "exclude_domains": set(rules["exclude"]["domains"]),
+        "exclude_subreddits": set(rules["exclude"]["subreddits"]),
+        "learning_domains": set(rules["learning"]["domains"]),
+    }
+
+
+RULES = load_rules()
+
+
+# ---------------------------------------------------------------- loading
+
+def load_root(path=BOOKMARKS):
+    """Parse Bookmarks.plist.
+
+    Safari's binary plist can contain malformed UTF-16 (half an emoji in a
+    title) that Python's plistlib rejects, so convert via Apple's plutil first.
+    """
+    with tempfile.TemporaryDirectory() as tmp:
+        xml = Path(tmp) / "bookmarks.xml"
+        subprocess.run(["plutil", "-convert", "xml1", "-o", str(xml), str(path)], check=True)
+        with open(xml, "rb") as f:
+            return plistlib.load(f)
+
+
+def reading_list_index(root):
+    """Position of the Reading List folder within the root's Children."""
+    return next(n for n, c in enumerate(root.get("Children", [])) if c.get("Title") == "com.apple.ReadingList")
+
+
+def load_items(path=BOOKMARKS):
+    """Return Reading List entries as flat dicts, oldest first.
+
+    Each item keeps `index`, its position in the Reading List folder on disk.
+    """
+    root = load_root(path)
+    folder = root["Children"][reading_list_index(root)]
+    items = []
+    for index, raw in enumerate(folder.get("Children", [])):
+        rl = raw.get("ReadingList", {})
+        url = raw.get("URLString", "")
+        parsed = urlparse(url)
+        parts = parsed.path.split("/")
+        items.append({
+            "index": index,
+            "title": raw.get("URIDictionary", {}).get("title") or url,
+            "url": url,
+            "domain": parsed.netloc.lower().removeprefix("www.").removeprefix("m."),
+            "subreddit": parts[2].lower() if len(parts) > 2 and parts[1] == "r" else "",
+            "added": rl.get("DateAdded"),
+            "viewed": rl.get("DateLastViewed"),
+            "preview": (rl.get("PreviewText") or "").strip(),
+            "uuid": raw.get("WebBookmarkUUID", ""),
+        })
+    items.sort(key=lambda i: i["added"] or datetime.min)
+    return items
+
+
+def dedupe(items):
+    """Collapse identical URLs, keeping the earliest save and counting repeats."""
+    seen = {}
+    for item in items:
+        if item["url"] in seen:
+            seen[item["url"]]["saves"] += 1
+        else:
+            seen[item["url"]] = {**item, "saves": 1}
+    return list(seen.values())
+
+
+# ---------------------------------------------------------------- categorizing
+
+def matches_domain(item, domains):
+    """True if the item's domain, or a parent domain, is in `domains`."""
+    d = item["domain"]
+    return any(d == x or d.endswith("." + x) for x in domains)
+
+
+def is_excluded(item):
+    return matches_domain(item, RULES["exclude_domains"]) or item["subreddit"] in RULES["exclude_subreddits"]
+
+
+def categorize(item):
+    """Return which collection an item belongs to: "learning", "other" or "excluded".
+
+    `item` has: title, url, domain, subreddit, added, viewed, preview, saves.
+    RULES holds the domain/subreddit sets from rules.json.
+    """
+    # TODO(you): decide the routing rules for the learning queue.
+    return "excluded" if is_excluded(item) else "other"
+
+
+# ---------------------------------------------------------------- pruning
+
+# argv: plist path, Reading List folder index, file of item indexes (one per line).
+DELETE_JXA = """
+ObjC.import('Foundation');
+function run(argv) {
+  const [path, folder, targets] = argv;
+  const root = $.NSPropertyListSerialization.propertyListWithDataOptionsFormatError(
+    $.NSData.dataWithContentsOfFile(path), 1 /* mutable containers */, null, null);
+  if (root.isNil()) throw new Error('could not parse ' + path);
+  const items = root.objectForKey('Children').objectAtIndex(Number(folder)).objectForKey('Children');
+  const doomed = $.NSMutableIndexSet.indexSet;
+  $.NSString.stringWithContentsOfFileEncodingError(targets, $.NSUTF8StringEncoding, null).js
+    .trim().split('\\n').forEach(n => doomed.addIndex(Number(n)));
+  items.removeObjectsAtIndexes(doomed);
+  const data = $.NSPropertyListSerialization.dataWithPropertyListFormatOptionsError(
+    root, 200 /* binary v1.0 */, 0, null);
+  if (data.isNil() || !data.writeToFileAtomically(path, true)) throw new Error('could not write ' + path);
+}
+"""
+
+
+def safari_running():
+    return subprocess.run(["pgrep", "-x", "Safari"], capture_output=True).returncode == 0
+
+
+def prune(apply, out):
+    """Delete is_excluded() items from Bookmarks.plist (dry run unless apply).
+
+    Deletion runs on a working copy through Foundation (DELETE_JXA), so the
+    file is rewritten in Safari's own binary format and every other key —
+    sync metadata, bookmarks, sub-second dates, the malformed title — is
+    carried over untouched. (PlistBuddy aborts on a file this size.)
+    """
+    items = load_items()
+    doomed = [i for i in items if is_excluded(i)]
+    print(f"{len(doomed)} of {len(items)} Reading List items match the exclude rules:")
+    for source, n in Counter(i["subreddit"] and f"reddit r/{i['subreddit']}" or i["domain"] for i in doomed).most_common():
+        print(f"  {n:6}  {source}")
+    if not apply:
+        print("Dry run — nothing changed. Re-run with --apply (Safari must be quit).")
+        return
+    if not doomed:
+        return
+    if safari_running():
+        raise SystemExit("Safari is running — quit it first (⌘Q) and re-run.")
+
+    backups = out / "backups"
+    backups.mkdir(parents=True, exist_ok=True)
+    stamp = datetime.now().strftime("%Y%m%d-%H%M%S")
+    backup = backups / f"Bookmarks-{stamp}.plist"
+    work = backups / f"Bookmarks-{stamp}-pruned.plist"
+    shutil.copy2(BOOKMARKS, backup)
+    shutil.copy2(BOOKMARKS, work)
+    mtime = BOOKMARKS.stat().st_mtime
+    print(f"Backup: {backup}")
+
+    folder = reading_list_index(load_root(work))
+    targets = backups / f"Bookmarks-{stamp}-targets.txt"
+    targets.write_text("\n".join(str(i["index"]) for i in doomed))
+    subprocess.run(["osascript", "-l", "JavaScript", "-e", DELETE_JXA,
+                    str(work), str(folder), str(targets)], check=True)
+    targets.unlink()
+
+    remaining = load_items(work)
+    expected = {i["uuid"] for i in items} - {i["uuid"] for i in doomed}
+    if {i["uuid"] for i in remaining} != expected or any(is_excluded(i) for i in remaining):
+        raise SystemExit(f"Verification failed — Safari untouched. Working copy left at {work}")
+    if BOOKMARKS.stat().st_mtime != mtime or safari_running():
+        raise SystemExit("Bookmarks.plist changed while working (sync agent?) — Safari untouched. Try again.")
+
+    shutil.copyfile(work, BOOKMARKS)  # write into the existing file, keeping its attributes
+    work.unlink()
+    print(f"Done: Reading List now has {len(remaining)} items. Relaunch Safari.")
+
+
+# ---------------------------------------------------------------- exporting
+
+def fmt(dt):
+    return dt.strftime("%Y-%m-%d") if dt else ""
+
+
+def write_csvs(items, out):
+    fields = ["title", "url", "domain", "added", "viewed", "saves", "preview"]
+    for name in COLLECTIONS:
+        with open(out / f"{name}.csv", "w", newline="", encoding="utf-8") as f:
+            w = csv.DictWriter(f, fieldnames=fields, extrasaction="ignore")
+            w.writeheader()
+            for i in items:
+                if i["collection"] == name:
+                    w.writerow({**i, "added": fmt(i["added"]), "viewed": fmt(i["viewed"])})
+
+
+def write_html(items, out):
+    rows = [
+        [i["title"], i["url"], i["domain"], fmt(i["added"]), 1 if i["viewed"] else 0,
+         i["preview"][:280], i["collection"], i["saves"]]
+        for i in items
+    ]
+    data = json.dumps(rows, ensure_ascii=False).replace("</", "<\\/")
+    template = (HERE / "browse_template.html").read_text(encoding="utf-8")
+    (out / "browse.html").write_text(template.replace("/*__DATA__*/[]", data), encoding="utf-8")
+
+
+def main():
+    ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
+    ap.add_argument("--out", type=Path, default=DEFAULT_OUT)
+    ap.add_argument("--prune", action="store_true", help="remove excluded items from Safari (dry run)")
+    ap.add_argument("--apply", action="store_true", help="with --prune: actually modify Bookmarks.plist")
+    args = ap.parse_args()
+
+    if args.prune:
+        return prune(args.apply, args.out)
+
+    items = dedupe(load_items())
+    for i in items:
+        i["collection"] = categorize(i)
+
+    args.out.mkdir(parents=True, exist_ok=True)
+    write_csvs(items, args.out)
+    write_html(items, args.out)
+
+    counts = Counter(i["collection"] for i in items)
+    print(f"{len(items)} unique items → {args.out}")
+    for name in COLLECTIONS:
+        print(f"  {name:9} {counts[name]:6}")
+    unsorted = Counter(i["domain"] for i in items if i["collection"] == "other")
+    print("top domains still in 'other':", ", ".join(f"{d} {n}" for d, n in unsorted.most_common(10)))
+
+
+if __name__ == "__main__":
+    main()
+</script>
+
+<script>
+const SRC = document.getElementById("source").textContent.replace(/^\n/, "").replace(/\n$/, "").split("\n");
+
+/* ------------------------------------------------------------ layers */
+const LAYERS = [
+  { id: "l1", name: "Header & imports", s: 1, e: 24,
+    what: "Declares how to run the file, documents it, and pulls in the standard-library tools everything else uses.",
+    why: "Every later line depends on these names existing. The docstring doubles as the --help text.",
+    builds: "The foundation the whole module stands on.",
+    deps: "Python standard library only", consumers: "Every other layer", flow: "No data yet. Makes names available." },
+  { id: "l2", name: "Configuration", s: 26, e: 45,
+    what: "Fixes the important paths and loads your routing rules into memory once.",
+    why: "Keeps settings and personal data out of the logic, so the logic can be shared and the rules kept private.",
+    builds: "The settings every later layer reads from.",
+    deps: "Header & imports; rules.json on disk", consumers: "Loading, Rules, Safety, Exporters", flow: "rules.json text → dict of sets (RULES)" },
+  { id: "l3", name: "Loading (data access)", s: 48, e: 104,
+    what: "Turns Safari's binary file into a clean Python list of flat records, then removes duplicates.",
+    why: "Apple's schema is nested and awkward. Every later step wants one simple shape.",
+    builds: "The data model the rest of the program speaks.",
+    deps: "plutil, plistlib, urlparse", consumers: "Safety (prune) and the export pipeline", flow: "bytes → XML → nested dict → list of item dicts" },
+  { id: "l4", name: "Rules (business logic)", s: 107, e: 126,
+    what: "Decides which collection each item belongs to.",
+    why: "This is the part that encodes your intent. It is kept small and free of side effects so it is easy to change.",
+    builds: "The decision engine the exporters and the pruner both use.",
+    deps: "RULES from Configuration", consumers: "Safety (prune) and main()", flow: "item dict → True/False or a collection name" },
+  { id: "l5", name: "Native bridge", s: 129, e: 148,
+    what: "A small JavaScript program that drives Apple's Foundation framework to delete entries losslessly.",
+    why: "Python can't write Safari's format faithfully, and PlistBuddy crashed. Foundation is what Safari itself uses.",
+    builds: "The one tool that can edit the archive without damaging it.",
+    deps: "macOS osascript, JavaScript for Automation, Foundation", consumers: "Safety (prune)", flow: "file path + index list → rewritten binary plist" },
+  { id: "l6", name: "Safety / write path", s: 151, e: 202,
+    what: "Orchestrates the one dangerous operation: dry run, guards, backup, working copy, delete, verify, commit.",
+    why: "Editing a browser's data file is hard to undo. Every step exists to make a mistake survivable.",
+    builds: "The trustworthy write path of the application.",
+    deps: "Loading, Rules, Native bridge, shutil, pgrep", consumers: "main() when --prune is passed", flow: "items → doomed indexes → edited copy → verified → live file" },
+  { id: "l7", name: "Exporters (presentation)", s: 205, e: 230,
+    what: "Turns item records into CSV files and a self-contained HTML page.",
+    why: "Different consumers want different shapes: spreadsheets and Notion want CSV, people want a searchable page.",
+    builds: "Everything you actually look at.",
+    deps: "csv, json, browse_template.html", consumers: "main() on the export path", flow: "item dicts → CSV rows / compact JSON arrays → files" },
+  { id: "l8", name: "Entry point", s: 233, e: 260,
+    what: "Reads command-line flags and wires the layers together into either the export or the prune run.",
+    why: "One clear front door. Everything above is reusable; only this part decides what runs.",
+    builds: "The application itself, as you experience it.",
+    deps: "Every layer above", consumers: "You, from the terminal", flow: "argv → mode → pipeline → files + printed summary" },
+];
+
+/* ------------------------------------------------------------ functions */
+const FUNCS = [
+  { name: "load_rules()", s: 32, e: 42, what: "Reads rules.json (or the example) and returns sets of domains and subreddits.", why: "Separates what to match from how matching works.", builds: "The RULES configuration object." },
+  { name: "load_root(path)", s: 50, e: 60, what: "Parses a bookmarks file into a Python dict tree.", why: "Hides the plutil workaround behind one call that can be pointed at any copy.", builds: "Raw access to Safari's data for both loading and pruning." },
+  { name: "reading_list_index(root)", s: 63, e: 65, what: "Finds where the Reading List folder sits among the top-level folders.", why: "The position isn't guaranteed, so it is looked up rather than assumed.", builds: "The address both the reader and the deleter need." },
+  { name: "load_items(path)", s: 68, e: 93, what: "Returns every Reading List entry as a flat dict, oldest first.", why: "Flattens Apple's nested schema into the program's own data model.", builds: "The list of records every other step works on." },
+  { name: "dedupe(items)", s: 96, e: 104, what: "Merges identical URLs, keeping the earliest and counting repeats.", why: "245 links had been saved more than once.", builds: "A clean set for exports." },
+  { name: "matches_domain(item, domains)", s: 109, e: 112, what: "Checks a domain or any parent domain against a set.", why: "So m.site.com and pt.site.com match a rule for site.com.", builds: "The basic matching primitive for the rules layer." },
+  { name: "is_excluded(item)", s: 115, e: 116, what: "Answers: does this item match the exclude rules?", why: "One shared definition used by both categorize() and prune().", builds: "A single source of truth for what gets removed." },
+  { name: "categorize(item)", s: 119, e: 126, what: "Returns the collection name for an item.", why: "Routes items into learning / other / excluded.", builds: "The collections in the CSVs and browse tabs." },
+  { name: "DELETE_JXA (embedded program)", s: 131, e: 148, what: "JavaScript run by osascript to delete entries using Foundation.", why: "The lossless way to edit Safari's binary file.", builds: "The prune path's actual delete step." },
+  { name: "safari_running()", s: 151, e: 152, what: "True if a Safari process exists.", why: "Writing while Safari is open risks a collision.", builds: "A guard used before and after the edit." },
+  { name: "prune(apply, out)", s: 155, e: 202, what: "Finds excluded items and, if asked, removes them safely.", why: "The only function that modifies Safari's data, so it carries all the safety.", builds: "The write path of the application." },
+  { name: "fmt(dt)", s: 207, e: 208, what: "Formats a date as YYYY-MM-DD, or empty for None.", why: "Dates need one consistent text format in every export.", builds: "A helper for both exporters." },
+  { name: "write_csvs(items, out)", s: 211, e: 219, what: "Writes one CSV per collection.", why: "CSV imports into Notion, Airtable and spreadsheets.", builds: "The spreadsheet outputs." },
+  { name: "write_html(items, out)", s: 222, e: 230, what: "Embeds the items into the browse template and saves browse.html.", why: "A searchable page needs no server or install.", builds: "The offline browsing UI." },
+  { name: "main()", s: 233, e: 256, what: "Parses flags and runs either the prune path or the export pipeline.", why: "Keeps decisions about what to run in one place.", builds: "The application's front door." },
+];
+
+/* ------------------------------------------------------------ blocks */
+const BLOCKS = [
+  [1, 1, "Interpreter line", "Lets the file run as a command.", "Convenience: ./readinglist.py works without typing python3.", "The file as an executable tool.", "—", "—", "The operating system"],
+  [2, 13, "Module docstring", "Describes the tool and shows usage.", "Documentation that the CLI reuses as its --help text.", "The user-facing description of the application.", "—", "__doc__ string", "main() at line 234"],
+  [14, 24, "Import block", "Loads standard-library modules and names.", "Later code needs CSV, JSON, paths, processes and URLs.", "The toolbox for every layer.", "—", "Module names", "All functions"],
+  [26, 29, "Constants", "Names the key paths and the collection list.", "One place to change where things live.", "Shared configuration.", "Home directory, script location", "Path objects, tuple", "Loading, Exporters, main()"],
+  [32, 42, "Rules loader", "Reads the JSON rules and converts lists to sets.", "Fast membership tests and a stable shape for the rest of the code.", "The RULES object.", "rules.json or rules.example.json", "dict of 3 sets", "Line 45"],
+  [45, 45, "Global rules", "Runs load_rules() once at import.", "Every rule check can read RULES without reloading the file.", "Module-wide configuration state.", "rules file", "RULES dict", "is_excluded()"],
+  [48, 48, "Section banner", "Labels the Loading section.", "Lets a reader skim a long file by its banners.", "Navigation structure of the file.", "—", "—", "Human readers"],
+  [50, 60, "load_root body", "Converts the file to XML in a temp folder, then parses it.", "Python's parser rejects a malformed character that Apple's tolerates.", "Robust read access.", "A plist path", "Nested dict tree", "load_items(), prune()"],
+  [63, 65, "Folder locator", "Finds the Reading List folder's position.", "Folders can be in any order.", "Addressing into the tree.", "Root dict", "An int", "load_items(), prune()"],
+  [68, 75, "load_items setup", "Loads the tree, picks the Reading List folder, prepares the output list.", "Gets to the data and an empty container before the loop.", "The start of the flattening step.", "A plist path", "folder, empty list", "The loop below"],
+  [76, 91, "Flattening loop", "Turns each nested Apple entry into one flat dict.", "Every later step wants the same simple shape.", "The program's data model.", "Raw entries", "Flat item dicts", "Everything downstream"],
+  [92, 93, "Sort and return", "Orders items oldest first.", "Deduping and browsing assume time order.", "Predictable ordering.", "Item list", "Sorted item list", "Callers of load_items()"],
+  [96, 104, "Dedupe", "Merges repeated URLs with a dictionary.", "Avoids duplicate rows and counts how often a link was saved.", "A clean export set.", "Item list", "Unique item list with saves", "main()"],
+  [107, 107, "Section banner", "Labels the Categorizing section.", "Navigation.", "File structure.", "—", "—", "Human readers"],
+  [109, 112, "Domain matcher", "Tests a domain and its parents against a set.", "Subdomains should follow their parent's rule.", "The basic matching tool.", "Item, set of domains", "bool", "is_excluded()"],
+  [115, 116, "Exclude predicate", "Combines the domain and subreddit rules.", "One definition shared by export and prune.", "Single source of truth.", "Item", "bool", "categorize(), prune()"],
+  [119, 126, "Router", "Picks a collection name.", "Turns rules into buckets.", "Collections in exports.", "Item", "Collection name", "main()"],
+  [129, 131, "Section banner + contract", "Labels Pruning and documents the JXA argument order.", "The two programs must agree on their inputs.", "An interface between Python and JavaScript.", "—", "—", "Readers, prune()"],
+  [132, 148, "Embedded JXA program", "Loads the plist with Foundation, deletes the listed indexes in one batch, writes binary back.", "Lossless editing in Safari's own format.", "The native delete tool.", "argv: path, folder index, targets file", "Rewritten plist on disk", "prune() via osascript"],
+  [151, 152, "Process check", "Asks pgrep whether Safari is running.", "Prevents editing a file Safari has open.", "A safety guard.", "—", "bool", "prune()"],
+  [155, 162, "prune signature & docs", "Declares the function and why it works this way.", "Records a hard-won lesson (PlistBuddy crash) where future readers will see it.", "The documented write path.", "apply flag, output folder", "—", "main()"],
+  [163, 167, "Plan & report", "Loads items, picks targets, prints a grouped summary.", "You see exactly what would happen before anything happens.", "The dry-run report.", "Live file", "doomed list, printed report", "The guards below"],
+  [168, 174, "Guards", "Stops on dry run, nothing to do, or Safari open.", "Fail safe, fail early.", "Protection around the write.", "Flags, process state", "Early return or exit", "Rest of prune()"],
+  [176, 184, "Backup & working copy", "Makes a timestamped backup and a separate copy to edit; remembers the file's modification time.", "The original is never edited directly, and you can always roll back.", "Recoverability.", "Live file", "backup, work, mtime", "Delete + verify steps"],
+  [186, 191, "Native delete", "Writes target indexes to a file and runs the JXA program on the working copy.", "Hands the delicate work to Apple's own serializer.", "The edit itself.", "Working copy, doomed indexes", "Edited working copy", "Verify step"],
+  [193, 198, "Verify", "Re-reads the copy and checks the result and that nothing changed meanwhile.", "Proof before commit. A crash-free run isn't proof.", "Trust in the result.", "Working copy, original IDs, mtime", "Pass or abort", "Commit step"],
+  [200, 202, "Commit", "Writes the verified copy over the live file and cleans up.", "The only moment the real file changes, and only after every check.", "The final, irreversible step.", "Verified copy", "Updated Bookmarks.plist", "You, when Safari relaunches"],
+  [205, 205, "Section banner", "Labels Exporting.", "Navigation.", "File structure.", "—", "—", "Human readers"],
+  [207, 208, "Date formatter", "datetime → 'YYYY-MM-DD' or ''.", "Consistent dates; None safe.", "A shared helper.", "datetime or None", "str", "write_csvs(), write_html()"],
+  [211, 219, "CSV writer", "Writes one CSV per collection with fixed columns.", "Spreadsheet and Notion/Airtable import.", "Tabular outputs.", "Items, output folder", "3 CSV files", "You / other tools"],
+  [222, 230, "HTML writer", "Packs items into compact arrays, safely embeds them in the template, writes browse.html.", "A no-server, searchable view.", "The browsing UI.", "Items, template", "browse.html", "Your browser"],
+  [233, 238, "CLI definition", "Declares the flags and parses them.", "Turns terminal words into a structured args object.", "The command-line interface.", "sys.argv", "args", "Rest of main()"],
+  [240, 241, "Mode switch", "Sends --prune runs to prune() and stops.", "Keeps the two modes separate.", "The routing decision.", "args", "Return", "prune()"],
+  [243, 245, "Pipeline", "load → dedupe → categorize.", "Each step does one thing to the whole list.", "The export data pipeline.", "Bookmarks.plist", "Categorized items", "Writers below"],
+  [247, 249, "Write outputs", "Makes the folder and writes CSVs and HTML.", "Delivers the results.", "The outputs.", "Items", "Files", "You"],
+  [251, 256, "Summary", "Prints counts and the top uncategorized domains.", "Tells you what to add to rules.json next.", "A feedback loop for improving rules.", "Items", "Terminal text", "You"],
+  [259, 260, "Entry guard", "Runs main() only when executed directly.", "Lets other code import the functions without triggering a run.", "Reusability as a library.", "__name__", "A call to main()", "Python runtime"],
+].map(([s, e, name, what, why, builds, inp, out, used]) => ({ s, e, name, what, why, builds, inp, out, used }));
+
+/* ------------------------------------------------------------ lines */
+// [line, purpose, inputs, outputs, why it exists, what breaks if removed, concept]
+const LINES = {};
+[
+  [1, "Tells the operating system which interpreter runs this file.", "None", "None", "Lets you run <code>./readinglist.py</code> directly once it is executable.", "<code>python3 readinglist.py</code> still works; only direct execution fails.", "Shebang / interpreter directive"],
+  [2, "Opens a triple-quoted string as the first statement, so Python stores it as the module's <code>__doc__</code>.", "None", "<code>__doc__</code>", "Documentation that lives with the code, and is reused as the <code>--help</code> text at line 234.", "<code>--help</code> loses its usage examples. The code still runs.", "Docstrings are runtime data"],
+  [7, "Usage example: plain export.", "—", "—", "Shows the most common command first.", "Only documentation is lost.", "Self-documenting CLI"],
+  [9, "Usage example: dry-run prune.", "—", "—", "Makes the safe default visible to anyone reading <code>--help</code>.", "Only documentation is lost.", "Safe defaults"],
+  [12, "Points readers to where the rules live.", "—", "—", "Explains why rules.json isn't in the repo.", "Only documentation is lost.", "Config separated from code"],
+  [14, "Imports argparse, the standard CLI-flag parser.", "—", "<code>argparse</code> module", "main() builds the command-line interface with it.", "<code>NameError</code> at line 234.", "Standard library"],
+  [15, "Imports csv for writing spreadsheet files.", "—", "<code>csv</code> module", "write_csvs() needs correct quoting of commas and newlines in titles.", "<code>NameError</code> at line 215.", "Use a library for formats with edge cases"],
+  [16, "Imports json.", "—", "<code>json</code> module", "Reads rules.json and serialises data into browse.html.", "Lines 37 and 228 fail.", "Serialization"],
+  [17, "Imports plistlib, Python's Apple property-list parser.", "—", "<code>plistlib</code>", "Turns the XML version of Safari's file into dicts and lists.", "Loading fails at line 60.", "Parsing a file format"],
+  [18, "Imports shutil for file copying.", "—", "<code>shutil</code>", "Backups and the final commit copy files.", "Prune fails at line 181.", "File operations"],
+  [19, "Imports subprocess for running other programs.", "—", "<code>subprocess</code>", "The bridge to macOS tools: plutil, pgrep and osascript.", "Every call to a macOS tool fails.", "Calling external processes"],
+  [20, "Imports tempfile for throwaway folders.", "—", "<code>tempfile</code>", "The 580 MB XML conversion needs somewhere to go that is cleaned up automatically.", "Line 56 fails.", "Temporary resources"],
+  [21, "Imports Counter, a dict that counts things.", "—", "<code>Counter</code>", "Tallies items by domain and by collection.", "Summaries at 166 and 251 fail.", "Specialised collections"],
+  [22, "Imports datetime.", "—", "<code>datetime</code>", "Backup timestamps and a safe fallback when sorting by date.", "Lines 92 and 178 fail.", "Dates and times"],
+  [23, "Imports Path, an object for file paths.", "—", "<code>Path</code>", "Lets paths be joined with <code>/</code> and offers methods like <code>.exists()</code>.", "Most path handling fails.", "Object-oriented paths"],
+  [24, "Imports urlparse, which splits a URL into parts.", "—", "<code>urlparse</code>", "Domain and subreddit extraction need the URL's host and path.", "Line 79 fails.", "Parse, don't regex"],
+  [26, "The folder this script lives in.", "<code>__file__</code>", "A Path", "Finds rules.json and the HTML template regardless of where you run the command from.", "Running from another folder would fail to find those files.", "Location-independent paths"],
+  [27, "The path to Safari's data file.", "Your home folder", "A Path", "One named constant instead of the path repeated in several places.", "Every function that defaults to it breaks.", "Named constants; <code>/</code> operator overloading"],
+  [28, "Default export folder, outside iCloud.", "Your home folder", "A Path", "Privacy decision: personal data never lands in a synced folder by default.", "<code>--out</code> loses its default.", "Privacy by default"],
+  [29, "The three collection names, in display order.", "—", "A tuple", "One list drives the CSV filenames and the summary order.", "write_csvs() and the summary have nothing to loop over.", "Single source of truth; immutable tuple"],
+  [32, "Defines load_rules().", "—", "A function object", "Groups everything about reading config in one place.", "Line 45 has nothing to call.", "Functions as units of responsibility"],
+  [34, "Prefers your personal rules file.", "HERE", "A Path", "rules.json holds your real rules and is git-ignored.", "Your custom rules would never load.", "Configuration over code"],
+  [35, "Checks whether rules.json exists.", "path", "bool", "A fresh clone won't have it.", "A fresh clone crashes with FileNotFoundError.", "Graceful fallback"],
+  [36, "Falls back to the committed example rules.", "HERE", "A Path", "The tool runs out of the box.", "See line 35.", "Sensible defaults"],
+  [37, "Reads the file's text and parses JSON into a dict.", "File text", "A nested dict", "JSON is human-editable and parses into Python types directly.", "Nothing to build RULES from.", "Deserialization"],
+  [38, "Begins returning a reshaped dictionary.", "rules", "A new dict", "Hides the JSON layout from the rest of the program.", "Callers get None.", "Adapter: reshape at the boundary"],
+  [39, "Converts the exclude-domain list to a set.", "A list of strings", "A set", "Set membership checks are instant regardless of size; lists check each element.", "Rules wouldn't be available under this name.", "Sets for membership (O(1))"],
+  [40, "Same for subreddits.", "A list", "A set", "Used at line 116 with <code>in</code>.", "is_excluded() raises KeyError.", "Sets for membership"],
+  [41, "Same for learning domains.", "A list", "A set", "Ready for the categorize() rules you'll write.", "Nothing yet, but your learning rules would need it.", "Preparing for extension"],
+  [45, "Runs load_rules() once when the module is imported.", "rules file", "RULES", "Every function can read the rules without passing them around.", "<code>NameError</code> in is_excluded().", "Module-level state (convenient, but a hidden dependency)"],
+  [48, "A comment banner marking a new section.", "—", "—", "Long files are navigated by skimming banners.", "Nothing runs differently; readability drops.", "Code organisation"],
+  [50, "Defines load_root with a default path.", "Optional path", "A function", "The default reads Safari's live file, but prune() points it at a working copy.", "Nothing can parse a plist.", "Default arguments as light dependency injection"],
+  [51, "Docstring explaining why the function is shaped this way.", "—", "—", "Records the malformed-UTF-16 lesson for future readers.", "Someone may 'simplify' it back into the bug.", "Comments explain why, not what"],
+  [56, "Creates a temporary folder that deletes itself after the block.", "—", "<code>tmp</code> path", "The 580 MB XML file must not be left behind.", "Temp files would pile up, or you'd need manual cleanup.", "Context managers (with)"],
+  [57, "Builds the path for the XML copy inside the temp folder.", "tmp", "A Path", "plutil needs an output location.", "Line 58 has no output path.", "Path composition"],
+  [58, "Runs Apple's plutil to convert binary to XML.", "The plist file", "An XML file", "Apple's parser tolerates the malformed emoji that Python rejects.", "plistlib meets the raw binary and raises InvalidFileException (it did, in this project).", "Wrapping a native tool; <code>check=True</code> turns failure into an exception"],
+  [59, "Opens the XML in binary mode.", "XML path", "A file handle", "plistlib expects bytes, not text.", "Nothing to parse.", "Binary vs text I/O"],
+  [60, "Parses XML into nested dicts and lists and returns it.", "Bytes", "Dict tree", "This is the payload the whole program needs.", "load_root returns None.", "Returning from inside a with block still runs cleanup"],
+  [63, "Defines a helper to locate the Reading List folder.", "root", "A function", "Both reading and deleting need the folder's position.", "Lines 74 and 186 break.", "Small single-purpose helpers"],
+  [65, "Scans the top-level folders and returns the first whose title matches.", "root['Children']", "int", "Safari doesn't promise the folder's position; here it happened to be 3.", "Code would hard-code 3 and break on another Mac.", "Generator expression + next(); enumerate()"],
+  [68, "Defines load_items.", "Optional path", "A function", "The program's main reader.", "Neither export nor prune has data.", "Abstraction boundary"],
+  [73, "Loads the whole tree.", "path", "root dict", "Starting point for navigation.", "Nothing to read from.", "Function composition"],
+  [74, "Selects the Reading List folder dict.", "root, index", "folder dict", "Narrows from the whole browser profile to the part we care about.", "No folder to loop over.", "Indexing into nested data"],
+  [75, "Creates an empty list to collect results.", "—", "[]", "The loop appends here.", "NameError at line 81.", "Accumulator pattern"],
+  [76, "Loops over raw entries, keeping each one's position.", "folder['Children']", "index, raw per entry", "The position is what the deleter targets later.", "Nothing is processed.", "enumerate()"],
+  [77, "Gets the entry's ReadingList sub-dict, or {} if missing.", "raw", "rl dict", "Defensive: one odd entry shouldn't crash 13,000.", "Lines 87–89 can't read dates or previews.", "dict.get with default"],
+  [78, "Gets the URL, or '' if missing.", "raw", "str", "Every item needs a URL key.", "Lines 79 and 84 fail.", "Defensive access"],
+  [79, "Splits the URL into scheme, host, path, etc.", "url", "ParseResult", "Domain and path are needed separately.", "Lines 80 and 85 fail.", "Parsing structured strings"],
+  [80, "Splits the path on '/'.", "'/r/python/comments/…'", "['', 'r', 'python', …]", "Finds the subreddit at position 2.", "Subreddit rules can't work.", "String splitting"],
+  [81, "Appends a new flat dict for this entry.", "Values below", "One item dict", "This dict is the program's data model.", "items stays empty.", "Data transfer object / flattening"],
+  [82, "Stores the on-disk position.", "index", "int", "prune() deletes by position.", "Deleting would be impossible to target.", "Keep the key you'll need later"],
+  [83, "Title, falling back to the URL.", "raw", "str", "Some entries have no title.", "Missing or None titles in exports.", "<code>or</code> as a fallback"],
+  [84, "Stores the URL.", "url", "str", "Identity for dedupe and output.", "Exports have no links.", "—"],
+  [85, "Normalises the host: lowercase, no 'www.' or 'm.'.", "netloc", "'medium.com'", "So variants of the same site group and match together.", "Counts split across variants; rules miss items.", "Normalisation before comparison"],
+  [86, "Extracts the subreddit if the path is /r/name.", "parts", "str or ''", "Reddit is one domain with very different communities.", "Subreddit rules can't work.", "Conditional expression"],
+  [87, "Date added.", "rl", "datetime", "Sorting and the 'saved' date in exports.", "Sorting and exports lose dates.", "—"],
+  [88, "Date last opened, or None.", "rl", "datetime or None", "Distinguishes read from unread.", "The 'never opened' filter can't work.", "None as 'absent'"],
+  [89, "Preview text, made safe and trimmed.", "rl", "str", "Used in the browse page.", "No previews.", "<code>(x or '')</code> guards against None"],
+  [90, "Stable unique ID of the entry.", "raw", "str", "Verification compares sets of IDs before and after.", "Line 194 has no identity to compare.", "Identity vs position"],
+  [92, "Sorts oldest first, treating missing dates as the oldest possible.", "items", "Sorted items", "Python can't compare None with a date; datetime.min avoids a crash.", "Order is arbitrary; dedupe may keep the wrong copy.", "Sort keys and lambdas"],
+  [93, "Returns the list.", "items", "list", "Hands the data model to callers.", "Callers get None.", "—"],
+  [96, "Defines dedupe.", "items", "A function", "Duplicates are a separate concern from loading.", "No dedupe.", "Single responsibility"],
+  [98, "An empty dict keyed by URL.", "—", "{}", "A dict lookup instantly answers 'seen this URL?'", "Nothing tracks duplicates.", "Hash map"],
+  [99, "Loops over items in date order.", "items", "item", "First seen is the earliest save.", "—", "Iteration"],
+  [100, "Checks if the URL was seen.", "url", "bool", "Decides merge versus add.", "Every item looks new.", "Membership test"],
+  [101, "Increments the saved count on the first copy.", "seen", "Updated count", "Shows links you saved many times.", "Repeat counts are lost.", "Mutation through a reference"],
+  [103, "Stores a copy of the item with saves=1.", "item", "A new dict", "<code>{**item}</code> copies so the original isn't changed.", "Nothing is stored.", "Dict unpacking (non-mutating copy)"],
+  [104, "Returns the unique items.", "seen", "list", "Dicts keep insertion order, so oldest-first survives.", "Callers get None.", "Ordered dicts (Python 3.7+)"],
+  [107, "Section banner: categorizing.", "—", "—", "Navigation.", "Readability only.", "—"],
+  [109, "Defines the domain matcher.", "item, domains", "A function", "A reusable primitive for any domain list.", "is_excluded() breaks.", "Composable predicates"],
+  [111, "Shorter local name.", "item", "str", "Readability.", "Line 112 needs editing.", "Local variables"],
+  [112, "True if the domain equals a rule or ends with '.' + rule.", "d, domains", "bool", "The dot matters: <code>pt.site.com</code> matches <code>site.com</code>, but <code>notsite.com</code> doesn't.", "Every matcher breaks.", "any() with a generator; boundary-aware suffix matching"],
+  [115, "Defines the exclude predicate.", "item", "A function", "Shared by categorize() and prune().", "Both break.", "Don't repeat yourself"],
+  [116, "Domain rule OR subreddit rule.", "item, RULES", "bool", "Either rule is enough to exclude.", "Nothing is ever excluded.", "Short-circuit <code>or</code>"],
+  [119, "Defines the router.", "item", "A function", "The place your routing logic lives.", "Export loses collections.", "Strategy / routing function"],
+  [125, "A TODO marking where your learning rules go.", "—", "—", "Flags unfinished work for the next session.", "Nothing runs differently.", "Leaving signposts"],
+  [126, "Returns 'excluded' or 'other'.", "item", "str", "Minimal routing until learning rules exist.", "None is written into every row.", "Conditional expression"],
+  [131, "Documents the arguments the JXA program expects.", "—", "—", "Python and JavaScript must agree on argument order.", "Future edits may silently mismatch.", "Interface contracts"],
+  [132, "Opens a Python string that holds a whole JavaScript program.", "—", "str", "Ships the native helper inside the one script, so there is no extra file to lose.", "Line 189 has nothing to run.", "Embedded programs (a script inside a script)"],
+  [133, "JXA: gives JavaScript access to Apple's Foundation framework.", "—", "<code>$</code> bridge", "Foundation is where Apple's plist serializer lives.", "Every <code>$.NS…</code> call fails.", "Language bridges (Objective-C from JavaScript)"],
+  [134, "osascript calls run(argv) with the command-line arguments.", "argv", "—", "The required entry point for a JXA script.", "Nothing executes.", "Runtime entry-point conventions"],
+  [135, "Unpacks the three arguments.", "argv", "path, folder, targets", "Named values read better than argv[0].", "Later lines can't reference them.", "Destructuring"],
+  [136, "Parses the plist using Safari's own serializer.", "File bytes", "root object", "Lossless and tolerant of the malformed title.", "Nothing to edit.", "Using the platform's native API"],
+  [137, "Option 1 means 'mutable containers'.", "—", "—", "Without it the arrays are read-only and deleting fails.", "removeObjectsAtIndexes throws.", "Immutable vs mutable data"],
+  [138, "Stops if parsing failed.", "root", "Error or continue", "Fail loudly instead of writing garbage.", "A bad parse could lead to a blank file being written.", "Guard clause"],
+  [139, "Walks to the Reading List's items array.", "root, folder", "items array", "Same navigation as Python's line 74.", "Nothing to delete from.", "Navigating object graphs"],
+  [140, "Creates an empty index set.", "—", "doomed", "Holds every position to delete.", "Line 143 has nothing to delete.", "Index sets"],
+  [141, "Reads the targets file as text.", "targets path", "str", "Thousands of indexes are passed by file, not command-line arguments.", "No targets.", "Passing data between processes"],
+  [142, "Splits lines and adds each index.", "Text", "Populated set", "<code>'\\\\n'</code> in Python becomes <code>\\n</code> in JavaScript.", "The set stays empty.", "Escaping across two languages"],
+  [143, "Deletes all targets in one batch.", "doomed", "Shorter array", "Deleting one at a time shifts later positions; a batch can't.", "Nothing is removed.", "Batch operations avoid index shifting"],
+  [144, "Serializes the object tree back to bytes.", "root", "NSData", "Need bytes to write.", "Nothing to save.", "Serialization"],
+  [145, "200 means binary plist v1.0, Safari's format.", "—", "—", "Writing XML would change the format and file size.", "Wrong or default format.", "Matching the original format"],
+  [146, "Writes atomically: temp file, then rename.", "data, path", "File on disk", "A crash mid-write can't leave a half-written file.", "Nothing is saved.", "Atomic writes"],
+  [148, "Closes the Python string.", "—", "—", "Ends the embedded program.", "SyntaxError.", "—"],
+  [151, "Defines the Safari check.", "—", "A function", "Used twice in prune().", "Guards fail.", "Reusable guard"],
+  [152, "Runs pgrep; exit code 0 means a process was found.", "—", "bool", "Exit codes are how command-line tools answer yes or no.", "No way to know if Safari is open.", "Exit codes as booleans"],
+  [155, "Defines prune with two inputs.", "apply, out", "A function", "The only function that changes Safari's data.", "--prune does nothing.", "Isolating the dangerous operation"],
+  [156, "Docstring with the design rationale.", "—", "—", "Explains the JXA choice and the PlistBuddy lesson.", "Rationale lost.", "Documenting decisions"],
+  [163, "Reads the live file into items.", "Bookmarks.plist", "items", "Always plan against the current state.", "Nothing to plan.", "Fresh read before write"],
+  [164, "Keeps only items that match the exclude rules.", "items", "doomed list", "This is the delete list.", "Nothing to remove.", "List comprehension (filter)"],
+  [165, "Prints the headline count.", "doomed, items", "Text", "You see the scale before deciding.", "Less visibility.", "f-strings"],
+  [166, "Counts targets by source (subreddit label or domain).", "doomed", "Ordered counts", "A grouped report is easier to check than 8,000 lines.", "Report loses grouping.", "<code>a and b or c</code> idiom; Counter.most_common()"],
+  [167, "Prints each group, right-aligned.", "Counts", "Text", "Readable columns.", "No breakdown.", "Format specs <code>{n:6}</code>"],
+  [168, "If --apply wasn't given…", "apply", "branch", "A dry run is the default.", "Every prune would write immediately.", "Safe by default"],
+  [169, "…say nothing changed and how to apply.", "—", "Text", "Tells you the next step.", "Confusing silence.", "Actionable messages"],
+  [170, "…and stop.", "—", "return", "The dry run ends here.", "Dry runs would modify Safari.", "Early return"],
+  [171, "If there's nothing to remove…", "doomed", "branch", "No backup, no writes, nothing to do.", "A pointless backup and rewrite.", "Idempotency"],
+  [173, "If Safari is open…", "pgrep", "branch", "Safari could overwrite or collide with our edit.", "Risk of a corrupted or reverted file.", "Precondition check"],
+  [174, "…exit with an explanation.", "—", "Exit code 1", "SystemExit prints the message and stops cleanly.", "—", "Fail fast"],
+  [176, "Backups go in the export folder.", "out", "Path", "Local-only, beside the exports.", "No place for backups.", "—"],
+  [177, "Creates it if needed.", "backups", "Folder", "<code>exist_ok</code> makes reruns safe.", "Copy fails on the first run.", "Idempotent setup"],
+  [178, "A timestamp like 20261020-020522.", "Clock", "str", "Unique, sortable backup names.", "Backups overwrite each other.", "Timestamped artefacts"],
+  [179, "Backup filename.", "stamp", "Path", "Never touched again; it's the undo button.", "No backup.", "—"],
+  [180, "Working-copy filename.", "stamp", "Path", "All edits happen here.", "Edits would hit the original.", "Staging area"],
+  [181, "Copies live → backup, with metadata.", "Bookmarks.plist", "Backup file", "Rollback is always possible.", "No undo.", "Backups before destructive ops"],
+  [182, "Copies live → working copy.", "Bookmarks.plist", "Working file", "Edits never touch the original.", "Nothing to edit.", "Copy-on-write thinking"],
+  [183, "Remembers the live file's modification time.", "File metadata", "float", "Later, a different time means someone else changed the file.", "Can't detect concurrent changes.", "Optimistic concurrency token"],
+  [184, "Prints the backup location.", "backup", "Text", "You know where your undo is.", "Backup is harder to find.", "—"],
+  [186, "Finds the folder index in the working copy.", "work", "int", "Derived from the actual file being edited, not assumed.", "JXA gets no folder index.", "Derive, don't assume"],
+  [187, "Path for the targets file.", "stamp", "Path", "Indexes go to a file, not command-line args.", "No file to write.", "—"],
+  [188, "Writes one index per line.", "doomed", "Text file", "Thousands of arguments are fragile; PlistBuddy failed that way.", "JXA has no targets.", "Files as an inter-process channel"],
+  [189, "Runs osascript in JavaScript mode with the embedded program.", "DELETE_JXA, args", "Process", "Executes the native delete.", "Nothing is deleted.", "subprocess with a list (no shell, so no injection)"],
+  [190, "Passes the three arguments; check=True raises on failure.", "Paths", "—", "A JXA error stops prune() before commit.", "Failures would go unnoticed.", "Errors as exceptions"],
+  [191, "Deletes the targets file.", "targets", "—", "Leaves no clutter.", "A leftover text file.", "Cleanup"],
+  [193, "Re-reads the edited copy with the same loader.", "work", "remaining", "Independent check of what was actually written.", "No verification.", "Read-after-write verification"],
+  [194, "Expected IDs = original minus targets.", "Two sets", "A set", "Set difference states exactly what should remain.", "Nothing to compare.", "Set algebra"],
+  [195, "Fails if the IDs differ or any excluded item remains.", "remaining, expected", "branch", "Two invariants must hold before commit.", "Silent corruption could be committed.", "Invariant checks"],
+  [196, "Stops and keeps the copy for inspection.", "work", "Exit", "The live file is never touched on failure.", "—", "Fail safe"],
+  [197, "Fails if the live file changed or Safari opened during the run.", "mtime, pgrep", "branch", "Prevents overwriting someone else's newer changes.", "Could clobber a sync update.", "Concurrency check"],
+  [198, "Stops with an explanation.", "—", "Exit", "Try again later.", "—", "—"],
+  [200, "Writes the verified copy over the live file's contents.", "work", "Updated Bookmarks.plist", "copyfile writes into the existing file, keeping its attributes; a move would replace the file.", "Nothing is ever applied.", "Commit step"],
+  [201, "Removes the working copy.", "work", "—", "Saves about 230 MB.", "Leftover large file.", "Cleanup"],
+  [202, "Reports the result.", "remaining", "Text", "Clear next step: relaunch Safari.", "Silent success.", "—"],
+  [205, "Section banner: exporting.", "—", "—", "Navigation.", "Readability only.", "—"],
+  [207, "Defines the date formatter.", "dt", "A function", "Shared by both writers.", "Writers break.", "DRY helpers"],
+  [208, "Formats or returns ''.", "datetime or None", "str", "Never-opened items have no date.", "AttributeError on None.", "None-safe formatting"],
+  [211, "Defines the CSV writer.", "items, out", "A function", "One output format per function.", "No CSVs.", "Single responsibility"],
+  [212, "Fixed column list and order.", "—", "list", "Stable columns make imports repeatable.", "DictWriter has no columns.", "Explicit schemas"],
+  [213, "One file per collection.", "COLLECTIONS", "name", "Separate files for separate destinations.", "Nothing written.", "—"],
+  [214, "Opens the CSV for writing as UTF-8.", "Path", "File handle", "<code>newline=''</code> is what the csv module requires for correct line endings.", "No file.", "Library-specific requirements"],
+  [215, "A writer that maps dict keys to columns.", "Fields", "DictWriter", "<code>extrasaction='ignore'</code> skips extra keys like uuid.", "Errors on extra keys.", "Mapping records to rows"],
+  [216, "Writes the header row.", "—", "Header line", "Imports need column names.", "Headerless CSV.", "—"],
+  [218, "Filters to this collection.", "item", "branch", "Each file gets only its own items.", "Every file gets everything.", "Filtering"],
+  [219, "Writes a row with formatted dates.", "item", "Row", "<code>{**i, …}</code> overrides the date fields without changing the item.", "Empty files.", "Non-mutating overrides"],
+  [222, "Defines the HTML writer.", "items, out", "A function", "The browse page is its own output.", "No browse.html.", "—"],
+  [223, "Builds compact rows (lists, not dicts).", "items", "list of lists", "Repeated key names would bloat a 13,000-row file.", "No data.", "Compact encodings"],
+  [225, "Truncates previews to 280 characters.", "preview", "str", "Keeps the page light.", "Larger file.", "Trade size for detail"],
+  [228, "Encodes JSON and escapes '&lt;/' so data can't close the script tag.", "rows", "str", "A title containing &lt;/script&gt; would otherwise break or inject into the page.", "Possible broken page or injection.", "Escaping data for its context"],
+  [229, "Reads the template.", "Template file", "str", "UI lives in its own file.", "Nothing to fill.", "Separating view from logic"],
+  [230, "Fills the placeholder and writes browse.html.", "template, data", "File", "A plain string replace is enough for one slot.", "No page.", "Template substitution"],
+  [233, "Defines main().", "—", "A function", "The program's front door.", "Nothing runs.", "Entry-point function"],
+  [234, "Creates the parser, reusing the module docstring as help.", "<code>__doc__</code>", "Parser", "One source of documentation.", "No CLI.", "Reuse"],
+  [235, "--out flag, converted to a Path.", "—", "—", "Choose another export folder.", "Option missing.", "Typed arguments"],
+  [236, "--prune flag (True/False).", "—", "—", "Switches to prune mode.", "No prune mode.", "Boolean flags"],
+  [237, "--apply flag.", "—", "—", "A second, deliberate step to write.", "No way to apply.", "Two-step confirmation"],
+  [238, "Parses the command line.", "sys.argv", "args", "Turns words into attributes.", "args undefined.", "—"],
+  [240, "If --prune was given…", "args", "branch", "Mode routing.", "Always exports.", "Front controller"],
+  [241, "…run prune and stop.", "args", "return", "The two modes don't mix.", "Prune would also export.", "Early return"],
+  [243, "Load then dedupe.", "Bookmarks.plist", "items", "Pipeline composition.", "No data.", "Function composition / pipeline"],
+  [244, "For each item…", "items", "item", "—", "—", "—"],
+  [245, "…add its collection name.", "item", "Mutated item", "Writers need to know the collection.", "KeyError in writers.", "Enrichment step"],
+  [247, "Creates the export folder.", "out", "Folder", "First run has none.", "Write fails.", "Idempotent setup"],
+  [248, "Writes the CSVs.", "items", "Files", "—", "No CSVs.", "—"],
+  [249, "Writes browse.html.", "items", "File", "—", "No page.", "—"],
+  [251, "Counts per collection.", "items", "Counter", "For the summary.", "No summary.", "—"],
+  [252, "Prints total and destination.", "—", "Text", "Confirms where output went.", "—", "—"],
+  [255, "Counts domains still in 'other'.", "items", "Counter", "Shows what to add to rules next.", "Lose the feedback loop.", "Feedback loops"],
+  [256, "Prints the top 10.", "Counter", "Text", "Short, actionable.", "—", "—"],
+  [259, "Runs main() only when executed, not when imported.", "<code>__name__</code>", "branch", "In this project, the file was imported to check the edit without triggering a run.", "Importing would start an export.", "<code>if __name__ == '__main__'</code>"],
+  [260, "Calls main().", "—", "—", "Starts the program.", "Running the file does nothing.", "—"],
+].forEach(([n, what, inp, out, why, breaks, concept]) => { LINES[n] = { what, inp, out, why, breaks, concept }; });
+
+const MODULE = { name: "readinglist.py", what: "A command-line tool that reads, categorizes, exports and safely prunes Safari's Reading List.", why: "Safari offers no search, export, bulk edit or API for the Reading List.", builds: "The engine of the Reading List toolkit." };
+const APP = { name: "Reading List toolkit", what: "Script + rules.json + browse template + exports + backups, around Safari's data.", why: "To understand, clean and eventually triage 13,625 saved links into a reading system.", builds: "A personal read-later workflow, and a portfolio piece." };
+
+/* ------------------------------------------------------------ rendering */
+const esc = s => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+const KW = /\b(def|return|if|else|for|in|not|and|or|with|as|import|from|raise|lambda|is|None|True|False|function|const|throw|new)\b/;
+const TOK = /(#.*$)|([rbf]*"(?:[^"\\]|\\.)*"|[rbf]*'(?:[^'\\]|\\.)*')|\b(def|return|if|else|for|in|not|and|or|with|as|import|from|raise|lambda|is|None|True|False)\b|\b(\d+)\b/g;
+function hlCode(s) {
+  let out = "", last = 0, m;
+  TOK.lastIndex = 0;
+  while ((m = TOK.exec(s))) {
+    out += esc(s.slice(last, m.index));
+    const cls = m[1] ? "com" : m[2] ? "str" : m[3] ? "kw" : "nm";
+    out += `<span class="${cls}">${esc(m[0])}</span>`;
+    last = TOK.lastIndex;
+    if (m[0] === "") TOK.lastIndex++;
+  }
+  out += esc(s.slice(last));
+  return out.replace(/(<span class="kw">def<\/span> )(\w+)/, '$1<span class="fnname">$2</span>');
+}
+function highlightAll(lines) {
+  let inTriple = false;
+  return lines.map(line => {
+    const count = (line.match(/"""/g) || []).length;
+    if (inTriple) {
+      if (count % 2 === 1) { const i = line.indexOf('"""') + 3; inTriple = false; return `<span class="str">${esc(line.slice(0, i))}</span>` + hlCode(line.slice(i)); }
+      return `<span class="str">${esc(line)}</span>`;
+    }
+    if (count % 2 === 1) { const i = line.indexOf('"""'); inTriple = true; return hlCode(line.slice(0, i)) + `<span class="str">${esc(line.slice(i))}</span>`; }
+    return hlCode(line);
+  });
+}
+
+const layerOf = n => LAYERS.find(l => n >= l.s && n <= l.e) || LAYERS[0];
+const blockOf = n => BLOCKS.find(b => n >= b.s && n <= b.e);
+const funcOf = n => FUNCS.find(f => n >= f.s && n <= f.e);
+
+const srcEl = document.getElementById("src");
+const highlighted = highlightAll(SRC);
+srcEl.innerHTML = SRC.map((_, i) => {
+  const n = i + 1, l = layerOf(n);
+  return `<div class="row${LINES[n] ? " annotated" : ""}" data-n="${n}" style="--lc:var(--${l.id})"><span class="stripe"></span><span class="num">${n}</span><span class="txt">${highlighted[i] || " "}</span></div>`;
+}).join("");
+const rows = [...srcEl.children];
+
+document.getElementById("legend").innerHTML = LAYERS.map(l => `<button type="button" data-jump="${l.s}"><i style="background:var(--${l.id})"></i>${l.name}</button>`).join("");
+document.getElementById("legend").addEventListener("click", e => { const b = e.target.closest("button"); if (b) select(+b.dataset.jump, true); });
+
+function setRange(cls, s, e) { rows.forEach((r, i) => r.classList.toggle(cls, i + 1 >= s && i + 1 <= e)); }
+
+function qa(what, why, builds) {
+  return `<div class="q"><b>What</b><span>${what}</span><b>Why</b><span>${why}</span><b>Builds</b><span>${builds}</span></div>`;
+}
+
+let current = 1;
+function select(n, scroll) {
+  n = Math.max(1, Math.min(SRC.length, n));
+  current = n;
+  rows.forEach(r => r.classList.remove("active"));
+  rows[n - 1].classList.add("active");
+  const b = blockOf(n), f = funcOf(n), l = layerOf(n);
+  setRange("inblock", b ? b.s : 0, b ? b.e : -1);
+  if (scroll) rows[n - 1].scrollIntoView({ block: "center", behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth" });
+  try { localStorage.setItem("atlas-line", n); } catch (e) {}
+  try { history.replaceState(null, "", "#L" + n); } catch (e) {}
+
+  let a = LINES[n], note = "";
+  if (!a) {
+    let k = n - 1;
+    while (k >= (b ? b.s : n) && !LINES[k]) k--;
+    if (b && k >= b.s && LINES[k]) { note = `Continues line ${k}, inside the "${b.name}" block.`; }
+    else note = SRC[n - 1].trim() === "" ? "A blank line. Blank lines separate ideas, the way paragraphs do in prose." : `Part of the "${b ? b.name : l.name}" block; see the block level below.`;
+  }
+  const code = esc(SRC[n - 1] || "");
+  const lineCard = a ? `
+    <p class="eyebrow">Level 1 · Line ${n}</p>
+    <h3>${a.what}</h3>
+    <pre>${code || " "}</pre>
+    <dl class="fields">
+      <dt>Inputs</dt><dd>${a.inp}</dd>
+      <dt>Outputs</dt><dd>${a.out}</dd>
+      <dt>Why it exists</dt><dd>${a.why}</dd>
+      <dt>If removed</dt><dd>${a.breaks}</dd>
+      <dt>Concept</dt><dd>${a.concept}</dd>
+    </dl>` : `
+    <p class="eyebrow">Level 1 · Line ${n}</p>
+    <pre>${code || " "}</pre>
+    <p style="margin:0;color:var(--muted)">${note}</p>`;
+
+  const fnStep = f ? { lvl: "Function", name: f.name, range: `${f.s}–${f.e}`, s: f.s, e: f.e, ...f }
+                   : { lvl: "Function", name: "Module scope", range: "", s: n, e: n, what: "This line runs at the top level of the file, outside any function.", why: "Top-level code runs once, when the file loads.", builds: "Module-wide setup." };
+  const steps = [
+    b && { lvl: "Level 2 · Block", name: b.name, range: `${b.s}–${b.e}`, s: b.s, e: b.e, what: b.what, why: b.why, builds: b.builds, extra: `<div class="q"><b>In</b><span>${b.inp}</span><b>Out</b><span>${b.out}</span><b>Used by</b><span>${b.used}</span></div>` },
+    { ...fnStep, lvl: "Function" },
+    { lvl: "Level 3 · Layer", name: l.name, range: `${l.s}–${l.e}`, s: l.s, e: l.e, what: l.what, why: l.why, builds: l.builds, color: `var(--${l.id})` },
+    { lvl: "Module", name: MODULE.name, range: `1–${SRC.length}`, s: 1, e: SRC.length, ...MODULE },
+    { lvl: "Application", name: APP.name, range: "", s: 1, e: SRC.length, ...APP },
+  ].filter(Boolean);
+
+  document.getElementById("panel").innerHTML = `
+    <div class="card linecard">${lineCard}</div>
+    <div class="card">
+      <p class="eyebrow">Zoom out</p>
+      <ol class="ladder">${steps.map((s, i) => `
+        <li data-s="${s.s}" data-e="${s.e}" style="--lvl:${s.color || "var(--accent)"}">
+          <div class="lvl">${s.lvl}</div>
+          <div class="name">${s.name}${s.range ? `<small>lines ${s.range}</small>` : ""}</div>
+          ${qa(s.what, s.why, s.builds)}${s.extra || ""}
+        </li>`).join("")}
+      </ol>
+    </div>
+    <div class="nav-hint"><button type="button" id="prevLine">↑ Previous</button><button type="button" id="nextLine">Next ↓</button><span>or click in the code and use <kbd>↑</kbd> <kbd>↓</kbd></span></div>`;
+  document.getElementById("prevLine").onclick = () => select(current - 1, true);
+  document.getElementById("nextLine").onclick = () => select(current + 1, true);
+  document.querySelectorAll(".ladder li").forEach(li => {
+    li.addEventListener("mouseenter", () => setRange("inrange", +li.dataset.s, +li.dataset.e));
+    li.addEventListener("mouseleave", () => setRange("inrange", 0, -1));
+  });
+}
+
+srcEl.addEventListener("click", e => { const r = e.target.closest(".row"); if (r) select(+r.dataset.n, false); });
+document.getElementById("codeScroll").addEventListener("keydown", e => {
+  if (e.key === "ArrowDown" || e.key === "j") { e.preventDefault(); select(current + 1, true); }
+  if (e.key === "ArrowUp" || e.key === "k") { e.preventDefault(); select(current - 1, true); }
+});
+
+let start = 58;
+const hash = location.hash.match(/^#L(\d+)$/);
+if (hash) start = +hash[1];
+else { try { const s = +localStorage.getItem("atlas-line"); if (s) start = s; } catch (e) {} }
+select(start, !!hash);
+
+/* ------------------------------------------------------------ chapters */
+document.getElementById("layerCards").innerHTML = LAYERS.map(l => `
+  <div class="card layer" style="--lc:var(--${l.id})">
+    <h3>${l.name}<small>lines ${l.s}–${l.e}</small></h3>
+    <dl class="fields"><dt>Purpose</dt><dd>${l.what}</dd><dt>Depends on</dt><dd>${l.deps}</dd><dt>Used by</dt><dd>${l.consumers}</dd><dt>Data flow</dt><dd>${l.flow}</dd></dl>
+  </div>`).join("");
+
+const traceList = (id, steps) => document.getElementById(id).innerHTML = steps.map(([t, d, ref]) => `<li><div><b>${t}</b> <span class="ref">${ref}</span><div>${d}</div></div></li>`).join("");
+traceList("traceExport", [
+  ["Python loads the file", "Imports run and constants are created. Nothing touches Safari yet.", "L1–29"],
+  ["Rules load", "load_rules() reads rules.json once and RULES holds sets of domains and subreddits.", "L32–45"],
+  ["Entry guard passes", "Because the file was run directly, __name__ is '__main__', so main() is called.", "L259"],
+  ["Flags are parsed", "No --prune, so the export path runs.", "L234–241"],
+  ["Safari's file is read", "plutil converts binary to XML in a temp folder; plistlib parses it; the Reading List folder is located.", "L50–74"],
+  ["Entries are flattened", "Each nested entry becomes one flat dict: title, url, domain, subreddit, dates, preview, uuid.", "L76–93"],
+  ["Duplicates merge", "Repeated URLs collapse into the earliest copy with a saves count.", "L96–104"],
+  ["Each item is routed", "categorize() adds a collection name to every item.", "L243–245"],
+  ["Files are written", "Three CSVs and browse.html land in ~/ReadingListExport.", "L247–249"],
+  ["Summary prints", "Counts per collection and the top unsorted domains, telling you what to add to rules next.", "L251–256"],
+]);
+traceList("tracePrune", [
+  ["Same start", "Imports, rules, entry guard and flag parsing; --prune routes to prune().", "L240–241"],
+  ["Plan", "Read the live file, filter excluded items, print a grouped report.", "L163–167"],
+  ["Guards", "Stop if dry run, if nothing to do, or if Safari is open.", "L168–174"],
+  ["Back up", "Timestamped backup plus a separate working copy; remember the file's modified time.", "L176–184"],
+  ["Delete natively", "Write target positions to a file; osascript runs DELETE_JXA, which removes them in one batch and writes binary.", "L186–191"],
+  ["Verify", "Re-read the copy: remaining IDs must equal original minus targets, and nothing excluded may remain.", "L193–196"],
+  ["Concurrency check", "The live file must be unchanged and Safari still closed.", "L197–198"],
+  ["Commit", "Copy the verified file over Safari's, remove the working copy, report.", "L200–202"],
+]);
+
+document.querySelector("#flowTable tbody").innerHTML = [
+  ["Bytes on disk", "Binary plist, 264 MB", "—", "Safari's native format: compact but unreadable to Python here."],
+  ["plutil output", "XML text, about 580 MB", "Binary → text, malformed character repaired", "Apple's tolerant parser does the hard part (L58)."],
+  ["Parsed tree", "dict → Children list → dicts…", "Text → Python objects", "Now navigable with keys and indexes (L60)."],
+  ["Reading List folder", "list of 13,625 raw entry dicts", "Zoomed from the whole profile to one folder", "Ignore bookmarks, history and tab groups (L74)."],
+  ["Flat item", "{index, title, url, domain, subreddit, added, viewed, preview, uuid}", "Nested keys flattened, domain normalised", "One simple shape for every later step (L81–91)."],
+  ["Deduped item", "…plus saves", "Duplicates merged, count added", "Avoids repeat rows, keeps a signal (L103)."],
+  ["Categorized item", "…plus collection", "Enriched with a routing decision", "Writers need to know where it goes (L245)."],
+  ["CSV row", "title, url, domain, added, viewed, saves, preview", "Dates as text; internal keys dropped", "Spreadsheet-friendly (L219)."],
+  ["HTML row", "[title, url, domain, added, viewed, preview280, collection, saves]", "Dict → compact array; preview truncated", "Smaller file, faster page (L223–228)."],
+  ["browse.html", "Template with embedded JSON", "Data safely escaped into a script", "Opens anywhere, offline (L230)."],
+].map((r, i) => `<tr><td>${i + 1}</td><td><b>${r[0]}</b></td><td><code>${esc(r[1])}</code></td><td>${r[2]}</td><td>${r[3]}</td></tr>`).join("");
+document.querySelector("#flowPrune tbody").innerHTML = [
+  ["Flat items", "list of dicts with index + uuid", "The planning view of the file (L163)."],
+  ["doomed", "the subset matching is_excluded()", "What to remove (L164)."],
+  ["targets file", "text: one position per line", "Safe hand-off between Python and JavaScript (L188)."],
+  ["NSMutableIndexSet", "a set of positions", "Lets Foundation delete all of them at once (L140–143)."],
+  ["Edited working copy", "binary plist bytes", "Same format as Safari's, minus the targets (L144–146)."],
+  ["remaining vs expected", "two sets of uuids", "Proof the right items, and only those, are gone (L193–195)."],
+  ["Bookmarks.plist", "updated live file", "Committed only after all checks (L200)."],
+].map((r, i) => `<tr><td>${i + 1}</td><td><b>${r[0]}</b></td><td><code>${esc(r[1])}</code></td><td>${r[2]}</td></tr>`).join("");
+
+document.getElementById("patterns").innerHTML = [
+  ["Pipeline", "Pipe and filter", "main(): load → dedupe → categorize → write (L243–249)", "One big function that does everything; a class with methods.", "Each stage is simple and testable, but every item passes through every stage in memory. Fine at 13k items; at millions you'd stream instead."],
+  ["Adapter", "Reshape at the boundary", "load_items() flattens Apple's schema; load_rules() turns JSON lists into sets.", "Use Apple's nested dicts everywhere.", "All later code speaks one simple shape. The cost is one translation step to keep in sync if Apple changes the schema."],
+  ["Rules as data", "Configuration over code", "rules.json + RULES; categorize() reads it.", "Hard-code domain lists in Python (the first version did).", "Change behaviour without editing code, and keep personal data out of git. The cost is a file that must exist and be valid JSON."],
+  ["Staging, verify, commit", "Two-phase change, like a database transaction", "prune(): working copy → delete → verify → copy over.", "Edit the live file in place.", "Mistakes are caught before they're real. The cost is extra disk (a backup and a copy) and time."],
+  ["Optimistic concurrency", "Detect, don't lock", "mtime recorded at L183, compared at L197.", "Lock the file; or ignore the risk.", "No locking needed for a rare event. The cost is that a conflict means 'try again' rather than waiting."],
+  ["Guard clauses", "Fail fast", "Dry run, nothing to do, Safari running (L168–174); nil checks in JXA.", "Deeply nested if/else.", "The happy path reads straight down. Each guard is one clear reason to stop."],
+  ["Ports & adapters to the OS", "Wrap native tools", "subprocess calls to plutil, pgrep, osascript.", "Pure Python reimplementation; the pyobjc library.", "Uses Apple's own, correct implementations with no dependencies. The cost is that it's macOS-only and errors come back as exit codes."],
+  ["Front controller", "One entry routes everything", "main() + argparse + the __main__ guard.", "Separate scripts per mode.", "One command, one help screen, shared code. The cost is a main() that grows with every new mode."],
+  ["Template view", "Keep the UI out of the logic", "browse_template.html + one placeholder (L229–230).", "Build HTML with Python strings; use a framework like Jinja.", "Designers can edit the page as HTML. A single replace() is the simplest thing that works here."],
+].map(([n, tag, where, alt, trade]) => `<div class="card pattern"><div class="tag">${tag}</div><h3>${n}</h3><dl class="fields"><dt>Where</dt><dd>${where}</dd><dt>Alternatives</dt><dd>${alt}</dd><dt>Trade-off</dt><dd>${trade}</dd></dl></div>`).join("");
+
+document.getElementById("metaphorCards").innerHTML = [
+  ["The vault", "Bookmarks.plist", "The one original archive. Many teams (Safari, iCloud) use it."],
+  ["The rulebook", "rules.json → RULES", "The cataloguer's guide to what belongs where. Kept in a private drawer."],
+  ["The photocopier", "load_root / plutil", "Makes a readable copy because the original's script is hard to read directly."],
+  ["The cataloguer", "load_items, dedupe, categorize", "Writes one tidy index card per item and sorts cards into trays."],
+  ["The reading room", "write_csvs, browse.html", "Where visitors read the catalogue. Never the vault itself."],
+  ["The conservator", "DELETE_JXA via Foundation", "The specialist who can remove pages without damaging the binding."],
+  ["The safety officer", "prune() guards and checks", "Insists on a backup, a copy, a closed building and an inspection before anything goes back in the vault."],
+  ["The front desk", "main()", "Takes your request and sends it to the right department."],
+].map(([t, code, d]) => `<div class="card"><b>${t}</b><span>${code}</span><div>${d}</div></div>`).join("");
+
+document.getElementById("knowledgeCards").innerHTML = [
+  ["Programming concepts", ["Context managers (<code>with</code>)", "Generator expressions, <code>any()</code>, <code>next()</code>", "List and dict comprehensions", "Dict unpacking for non-mutating copies", "Sets and set algebra", "Sort keys and lambdas", "Exit codes and exceptions", "Module-level state and the <code>__main__</code> guard"]],
+  ["Technologies", ["Python 3 standard library", "Apple property lists (binary and XML)", "macOS <code>plutil</code>, <code>pgrep</code>, <code>osascript</code>", "JavaScript for Automation (JXA)", "Foundation: NSPropertyListSerialization, NSMutableIndexSet", "CSV, JSON, HTML", "git and the GitHub CLI"]],
+  ["Reusable patterns", ["Dry run by default, then --apply", "Backup → working copy → verify → commit", "Optimistic concurrency with a modification time", "Rules in a config file", "Adapter that flattens external data", "Batch delete to avoid index shifting", "Escaping data for the context it's embedded in"]],
+  ["Interview topics", ["Why deleting by index in a loop goes wrong", "Atomic writes and why they matter", "Time complexity: set vs list membership", "Shell injection, and why subprocess takes a list", "XSS: embedding JSON in HTML safely", "Unicode: UTF-16 surrogate pairs", "Idempotency (mkdir exist_ok, reruns)", "How you'd test this code"]],
+  ["Learn next", ["pytest with fixture plists (test without touching Safari)", "dataclasses and type hints for the item record", "The logging module instead of print", "SQLite for larger datasets", "pyobjc (Foundation from Python directly)", "The Notion or Airtable API for the reading queue"]],
+].map(([t, items]) => `<div class="card"><h3 style="font:700 16px var(--display);margin:0 0 8px">${t}</h3><ul class="tight">${items.map(i => `<li>${i}</li>`).join("")}</ul></div>`).join("");
+
+traceList("method", [
+  ["Start at the bottom", "Find the entry point first: <code>if __name__ == '__main__'</code> → <code>main()</code>. It tells you what the program does as a sequence of calls, before you know how any of them work.", "L233–260"],
+  ["Skim the banners and function names", "Banners (<code># ---- loading</code>) and names give you the table of contents. Here: rules, loading, categorizing, pruning, exporting.", "L48, 107, 129, 205"],
+  ["Find the data shape", "Locate where the main record is built. Once you know an item is <code>{index, title, url, domain, …}</code>, every later function is easier to read.", "L81–91"],
+  ["Follow one item end to end", "Pick one saved link and trace it through load → dedupe → categorize → write. This is Level 5 done in your head.", "Data flow"],
+  ["Mark the side effects", "Find every place that writes a file, runs a process or reads the clock. These are where danger and bugs live. Read them twice.", "Purity table below"],
+  ["Read the guards before the work", "In risky functions, the early returns and exits tell you what the author feared. In prune(), that's dry runs, Safari running, and corruption.", "L168–198"],
+  ["Zoom out after every detail", "After a line, ask what block it's in, what function, what layer. Use the ladder in the explorer until it becomes a habit.", "Explorer"],
+]);
+
+document.querySelector("#purity tbody").innerHTML = [
+  ["load_rules()", "Side effect", "Reads rules.json"],
+  ["load_root()", "Side effect", "Runs plutil, writes and deletes a temp file"],
+  ["reading_list_index()", "Pure", "—"],
+  ["load_items()", "Side effect", "Through load_root()"],
+  ["dedupe()", "Pure", "Returns new dicts; input untouched"],
+  ["matches_domain()", "Pure", "—"],
+  ["is_excluded()", "Pure, given RULES", "Reads module-level RULES"],
+  ["categorize()", "Pure, given RULES", "Reads module-level RULES"],
+  ["safari_running()", "Side effect", "Runs pgrep"],
+  ["prune()", "Side effects (many)", "Files, processes, clock, Safari's data"],
+  ["fmt()", "Pure", "—"],
+  ["write_csvs()", "Side effect", "Writes files"],
+  ["write_html()", "Side effect", "Reads the template, writes a file"],
+  ["main()", "Side effects", "Orchestrates all of the above"],
+].map(r => `<tr><td><code>${r[0]}</code></td><td>${r[1]}</td><td>${r[2]}</td></tr>`).join("");
+
+document.getElementById("quiz").innerHTML = [
+  ["Why does prune() delete all targets in one batch instead of looping and deleting one at a time?", "Deleting item 5 shifts every later item down one position, so a loop over the original positions would delete the wrong items. A batch delete (or deleting from the highest index down) avoids this. See L143."],
+  ["What would go wrong if line 112 used <code>d.endswith(x)</code> without the dot?", "<code>notsite.com</code> would match a rule for <code>site.com</code>. The dot ensures only real subdomains match."],
+  ["load_root() takes a path argument with a default. Where does that flexibility pay off?", "prune() calls it on the working copy (L186) and load_items() on the edited copy (L193), so the same code reads the live file, a copy or a backup."],
+  ["Why is the modification time recorded at L183 and checked again at L197?", "To detect another process (Safari, or iCloud's sync agent) changing the file during the run. If it changed, overwriting it would destroy their changes."],
+  ["Why does write_html() replace '&lt;/' with '&lt;\\/'?", "Inside a &lt;script&gt; tag, the text &lt;/script&gt; in the data would end the script early, breaking the page or letting a crafted title inject HTML. The escaped form means the same thing to JSON but not to the HTML parser."],
+  ["What does the <code>__main__</code> guard let you do that this project actually used?", "Import readinglist as a module to reuse load_root() and reading_list_index() for verification, without starting an export."],
+].map(([q, a]) => `<details class="q"><summary>${q}</summary><div>${a}</div></details>`).join("");
+</script>
