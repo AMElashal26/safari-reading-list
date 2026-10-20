@@ -1,0 +1,123 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Reading List</title>
+<style>
+  :root { --bg:#fbfaf7; --fg:#1d1d1b; --muted:#6d6a63; --line:#e6e2d9; --accent:#2f5d8a; --chip:#efebe2; }
+  @media (prefers-color-scheme: dark) {
+    :root { --bg:#161615; --fg:#e9e6df; --muted:#9a968d; --line:#2c2b28; --accent:#8db4dc; --chip:#24231f; }
+  }
+  * { box-sizing:border-box; }
+  body { margin:0; background:var(--bg); color:var(--fg); font:15px/1.45 -apple-system, BlinkMacSystemFont, "SF Pro Text", sans-serif; }
+  header { position:sticky; top:0; background:var(--bg); border-bottom:1px solid var(--line); padding:14px 16px 10px; z-index:1; }
+  h1 { font-size:18px; margin:0 0 10px; }
+  .tabs, .controls { display:flex; flex-wrap:wrap; gap:8px; align-items:center; }
+  .controls { margin-top:10px; }
+  button.tab { border:1px solid var(--line); background:var(--chip); color:var(--fg); border-radius:999px; padding:4px 12px; cursor:pointer; font:inherit; }
+  button.tab[aria-pressed="true"] { background:var(--accent); color:var(--bg); border-color:var(--accent); }
+  input, select { font:inherit; color:var(--fg); background:var(--chip); border:1px solid var(--line); border-radius:6px; padding:5px 8px; }
+  input[type=search] { flex:1 1 240px; }
+  label { color:var(--muted); font-size:13px; }
+  main { max-width:900px; margin:0 auto; padding:8px 16px 40px; }
+  .meta { color:var(--muted); font-size:13px; margin:8px 0; }
+  ol { list-style:none; padding:0; margin:0; }
+  li { padding:10px 0; border-bottom:1px solid var(--line); }
+  li a { color:var(--fg); text-decoration:none; font-weight:600; overflow-wrap:anywhere; }
+  li a:hover { color:var(--accent); }
+  .sub { color:var(--muted); font-size:13px; }
+  .preview { color:var(--muted); font-size:13px; margin-top:3px; }
+  .pager { display:flex; gap:8px; align-items:center; justify-content:center; margin-top:16px; }
+</style>
+</head>
+<body>
+<header>
+  <h1>Reading List</h1>
+  <div class="tabs" id="tabs"></div>
+  <div class="controls">
+    <input type="search" id="q" placeholder="Search titles, URLs, previews…">
+    <select id="domain"><option value="">All domains</option></select>
+    <select id="sort"><option value="new">Newest first</option><option value="old">Oldest first</option></select>
+    <label><input type="checkbox" id="unread"> Never opened</label>
+  </div>
+</header>
+<main>
+  <div class="meta" id="meta"></div>
+  <ol id="list"></ol>
+  <div class="pager"><button id="prev">← Prev</button><span id="page"></span><button id="next">Next →</button></div>
+</main>
+<script>
+const ROWS = /*__DATA__*/[];
+// row: [title, url, domain, added, viewed, preview, collection, saves]
+const PAGE = 100;
+const state = { tab: "learning", q: "", domain: "", sort: "new", unread: false, page: 0 };
+const $ = id => document.getElementById(id);
+
+function tabs() {
+  const counts = {};
+  ROWS.forEach(r => counts[r[6]] = (counts[r[6]] || 0) + 1);
+  $("tabs").innerHTML = "";
+  ["learning", "other", "excluded", "all"].forEach(t => {
+    const b = document.createElement("button");
+    b.className = "tab";
+    b.textContent = `${t} (${t === "all" ? ROWS.length : counts[t] || 0})`;
+    b.setAttribute("aria-pressed", state.tab === t);
+    b.onclick = () => { state.tab = t; state.domain = ""; state.page = 0; tabs(); domains(); render(); };
+    $("tabs").appendChild(b);
+  });
+}
+
+function inTab(r) { return state.tab === "all" || r[6] === state.tab; }
+
+function domains() {
+  const c = {};
+  ROWS.filter(inTab).forEach(r => c[r[2]] = (c[r[2]] || 0) + 1);
+  const sel = $("domain");
+  sel.innerHTML = '<option value="">All domains</option>';
+  Object.entries(c).sort((a, b) => b[1] - a[1]).slice(0, 150).forEach(([d, n]) => {
+    const o = document.createElement("option");
+    o.value = d; o.textContent = `${d} (${n})`;
+    sel.appendChild(o);
+  });
+}
+
+function render() {
+  const q = state.q.toLowerCase();
+  let rows = ROWS.filter(r => inTab(r)
+    && (!state.domain || r[2] === state.domain)
+    && (!state.unread || !r[4])
+    && (!q || (r[0] + " " + r[1] + " " + r[5]).toLowerCase().includes(q)));
+  rows.sort((a, b) => state.sort === "new" ? b[3].localeCompare(a[3]) : a[3].localeCompare(b[3]));
+  const pages = Math.max(1, Math.ceil(rows.length / PAGE));
+  state.page = Math.min(state.page, pages - 1);
+  $("meta").textContent = `${rows.length.toLocaleString()} items`;
+  $("page").textContent = `${state.page + 1} / ${pages}`;
+  $("prev").disabled = state.page === 0;
+  $("next").disabled = state.page >= pages - 1;
+  const list = $("list");
+  list.innerHTML = "";
+  rows.slice(state.page * PAGE, (state.page + 1) * PAGE).forEach(r => {
+    const li = document.createElement("li");
+    const a = document.createElement("a");
+    a.href = r[1]; a.target = "_blank"; a.rel = "noopener noreferrer"; a.textContent = r[0];
+    const sub = document.createElement("div");
+    sub.className = "sub";
+    sub.textContent = `${r[2]} · saved ${r[3]}${r[4] ? " · opened" : ""}${r[7] > 1 ? ` · saved ${r[7]}×` : ""}`;
+    li.append(a, sub);
+    if (r[5]) { const p = document.createElement("div"); p.className = "preview"; p.textContent = r[5]; li.appendChild(p); }
+    list.appendChild(li);
+  });
+  window.scrollTo(0, 0);
+}
+
+$("q").oninput = e => { state.q = e.target.value; state.page = 0; render(); };
+$("domain").onchange = e => { state.domain = e.target.value; state.page = 0; render(); };
+$("sort").onchange = e => { state.sort = e.target.value; render(); };
+$("unread").onchange = e => { state.unread = e.target.checked; state.page = 0; render(); };
+$("prev").onclick = () => { state.page--; render(); };
+$("next").onclick = () => { state.page++; render(); };
+tabs(); domains(); render();
+</script>
+</body>
+</html>

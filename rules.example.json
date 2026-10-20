@@ -1,0 +1,12 @@
+{
+  "exclude": {
+    "domains": ["example-noise-site.com", "old-newsletter.net"],
+    "subreddits": ["memes"]
+  },
+  "learning": {
+    "domains": [
+      "medium.com", "github.com", "coursera.org", "datacamp.com",
+      "developer.apple.com", "developers.google.com", "en.wikipedia.org"
+    ]
+  }
+}

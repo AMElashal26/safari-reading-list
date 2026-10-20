@@ -1,0 +1,12 @@
+# Personal routing rules — copy rules.example.json to start
+rules.json
+
+# Never commit Reading List data or Safari files
+*.plist
+*.csv
+browse.html
+backups/
+ReadingListExport/
+
+__pycache__/
+.DS_Store
